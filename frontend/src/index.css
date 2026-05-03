@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Design tokens */
+  --color-primary: #0f4c81;
+  --color-primary-hover: #0c3e69;
+  --color-primary-soft: #eaf3fb;
+  --color-secondary: #2e6b5a;
+  --color-success: #1e8e5a;
+  --color-warning: #b7791f;
+  --color-danger: #c53030;
+  --color-info: #2563eb;
+  --color-bg-base: #f1f5f9;
+  --color-surface-primary: #ffffff;
+  --color-surface-secondary: #f2f5fa;
+  --color-border-default: #dce3ee;
+  --color-border-strong: #c2cedd;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #334155;
+  --color-text-tertiary: #64748b;
+  --color-text-disabled: #94a3b8;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
+
+  /* Role accent colors */
+  --role-customer: #4f46e5;
+  --role-customer-soft: #eef2ff;
+  --role-admin: #7c3aed;
+  --role-admin-soft: #f5f3ff;
+  --role-teller: #d97706;
+  --role-teller-soft: #fffbeb;
+  --role-risk: #e11d48;
+  --role-risk-soft: #fff1f2;
+  --role-cs: #059669;
+  --role-cs-soft: #ecfdf5;
+
+  /* Sidebar */
+  --sidebar-bg: #0f172a;
+  --sidebar-text: #cbd5e1;
+  --sidebar-text-active: #ffffff;
+  --sidebar-active-bg: rgba(255,255,255,0.08);
+  --sidebar-hover-bg: rgba(255,255,255,0.05);
+  --sidebar-width: 240px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: Inter, Manrope, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
