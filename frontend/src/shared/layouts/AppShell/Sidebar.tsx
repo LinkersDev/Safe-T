@@ -14,10 +14,10 @@ const ROLE_LABELS: Partial<Record<RoleCode, string>> = {
 }
 
 const ROLE_ACCENT: Partial<Record<RoleCode, string>> = {
-  CUSTOMER: 'bg-indigo-500',
-  ADMIN: 'bg-violet-500',
+  CUSTOMER: 'bg-blue-500',
+  ADMIN: 'bg-blue-500',
   TELLER: 'bg-amber-500',
-  TELLER_ADMIN: 'bg-amber-600',
+  TELLER_ADMIN: 'bg-amber-500',
   RISK_OFFICER: 'bg-rose-500',
   CUSTOMER_SERVICE: 'bg-emerald-500',
 }
@@ -53,13 +53,14 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       {/* Sidebar panel */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-30 flex w-60 flex-col bg-slate-900 transition-transform duration-200',
+          'fixed inset-y-0 left-0 z-30 flex w-60 flex-col transition-transform duration-200',
           'lg:static lg:translate-x-0 lg:z-auto',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
+        style={{ backgroundColor: 'var(--sidebar-bg)' }}
       >
         {/* Logo */}
-        <div className="flex h-16 items-center gap-3 border-b border-slate-700/50 px-5">
+        <div className="flex h-16 items-center gap-3 border-b border-slate-700/30 px-5">
           <div className={cn('flex h-8 w-8 items-center justify-center rounded-lg text-white text-sm font-bold', accentClass)}>
             S
           </div>
@@ -67,16 +68,16 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         </div>
 
         {/* User info */}
-        <div className="border-b border-slate-700/50 px-5 py-4">
+        <div className="border-b border-slate-700/30 px-5 py-4">
           <p className="truncate text-sm font-semibold text-white">{session.user?.fullName ?? '—'}</p>
-          <div className="mt-1 flex items-center gap-2">
+          <div className="mt-1.5 flex items-center gap-2">
             <span className={cn('inline-block h-2 w-2 rounded-full', accentClass)} />
-            <span className="text-xs text-slate-400">{roleLabel}</span>
+            <span className="text-xs" style={{ color: 'var(--sidebar-text)' }}>{roleLabel}</span>
           </div>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
           {/* Main items */}
           {mainItems.length > 0 && (
             <>
@@ -97,8 +98,8 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 
           {/* Support group */}
           {supportItems.length > 0 && (
-            <div className="pt-4">
-              <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+            <div className="pt-6">
+              <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--sidebar-text)' }}>
                 Support
               </p>
               {supportItems.map((item) => (
@@ -122,15 +123,43 @@ function NavItem({ item, onClick }: { item: import('../../../core/navigation/nav
       onClick={onClick}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+          'sidebar-item flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium relative overflow-hidden',
           isActive
-            ? 'bg-white/10 text-white'
-            : 'text-slate-400 hover:bg-white/5 hover:text-slate-200',
+            ? 'text-white font-semibold'
+            : 'hover:text-white',
         )
       }
+      style={({ isActive }) => ({
+        backgroundColor: isActive ? 'var(--sidebar-active-bg)' : undefined,
+        color: isActive ? 'var(--sidebar-text-active)' : 'var(--sidebar-text)',
+        transition: 'var(--transition-fast)',
+      })}
+      onMouseEnter={(e) => {
+        if (!e.currentTarget.classList.contains('active')) {
+          e.currentTarget.style.backgroundColor = 'var(--sidebar-hover-bg)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!e.currentTarget.classList.contains('active')) {
+          e.currentTarget.style.backgroundColor = 'transparent';
+        }
+      }}
     >
-      <span className="text-base leading-none">{item.icon}</span>
-      <span>{item.label}</span>
+      {({ isActive }) => (
+        <>
+          {/* Active left border indicator */}
+          {isActive && (
+            <div 
+              className="absolute left-0 top-0 bottom-0 w-[3px] rounded-r-full"
+              style={{ backgroundColor: 'var(--sidebar-active-border)' }}
+            />
+          )}
+          <span className="flex items-center justify-center w-5 h-5">
+            <item.icon size={18} strokeWidth={2} />
+          </span>
+          <span>{item.label}</span>
+        </>
+      )}
     </NavLink>
   )
 }

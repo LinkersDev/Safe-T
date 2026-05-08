@@ -1,18 +1,15 @@
 import { useState, type FormEvent } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
 import { Card } from '../../../shared/components/ui/Card'
 import { Input } from '../../../shared/components/ui/Input'
 import { Button } from '../../../shared/components/ui/Button'
 import { StatusNoticeCard } from '../../../shared/components/ui/StatusNoticeCard'
 import { useToast } from '../../../shared/components/ui/Toast'
 import { registerCustomer } from '../services/teller-service'
-import { ROUTE_PATHS } from '../../../app/routing/paths'
 import { normalizeApiError } from '../../../core/api/error-normalizer'
 
 export function TellerRegisterCustomerPage() {
   const toast = useToast()
-  const navigate = useNavigate()
   const [fullName, setFullName] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [legalFullName, setLegalFullName] = useState('')

@@ -14,6 +14,7 @@ import logging
 import secrets
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import transaction as db_transaction
 from django.utils import timezone
@@ -22,6 +23,7 @@ from .constants import (
     FAILED_LOGIN_WINDOW_MINUTES,
     MAX_FAILED_LOGIN_ATTEMPTS,
     OTP_EXPIRY_MINUTES,
+    OTP_MAX_ATTEMPTS,
     LockEventType,
     LoginStatus,
     OTPStatus,
@@ -83,6 +85,11 @@ def create_otp(
     ).update(status=OTPStatus.CANCELLED)
 
     otp_plain = _generate_otp_code()
+    print(f"[DEBUG] create_otp called — DEBUG={settings.DEBUG} ENABLE_DEV_OTP={getattr(settings, 'ENABLE_DEV_OTP', 'NOT_SET')}")
+    print(f"[DEBUG] OTP GENERATED: {otp_plain}")
+    if settings.DEBUG and getattr(settings, "ENABLE_DEV_OTP", False):
+        logger.warning("[OTP DEBUG] phone=%s otp=%s type=%s", phone, otp_plain, request_type)
+        print(f"[DEBUG] logger.warning executed for OTP")
     otp_hash = make_password(otp_plain)
 
     otp = OTPRequest.objects.create(
@@ -92,6 +99,7 @@ def create_otp(
         purpose_reference=purpose_ref,
         otp_hash=otp_hash,
         status=OTPStatus.PENDING,
+        max_attempts=OTP_MAX_ATTEMPTS,
         expires_at=timezone.now() + timedelta(minutes=OTP_EXPIRY_MINUTES),
         ip_address=ip,
         device_id=device_id,

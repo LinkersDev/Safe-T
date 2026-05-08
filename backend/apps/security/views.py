@@ -63,7 +63,7 @@ from .services import (
     register_or_update_device,
     unlock_user,
 )
-from .throttling import LoginThrottle, OTPSendThrottle
+from .throttling import LoginThrottle, OTPSendThrottle, OTPSendPhoneThrottle
 
 logger = logging.getLogger("apps.security")
 
@@ -223,7 +223,7 @@ def complete_registration(request: Request) -> Response:
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
-@throttle_classes([OTPSendThrottle])
+@throttle_classes([OTPSendThrottle, OTPSendPhoneThrottle])
 def send_login_otp(request: Request) -> Response:
     """
     Sends a LOGIN OTP.
@@ -638,7 +638,7 @@ def confirm_password_reset(request: Request) -> Response:
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
-@throttle_classes([OTPSendThrottle])
+@throttle_classes([OTPSendThrottle, OTPSendPhoneThrottle])
 def send_pin_reset_otp(request: Request) -> Response:
     """
     Sends a PIN_RESET OTP.

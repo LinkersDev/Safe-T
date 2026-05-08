@@ -52,6 +52,7 @@ def send_transfer_otp(
     _, otp_plain = create_otp(
         phone=user.phone_number,
         request_type=OTPRequestType.TRANSFER,
+        purpose_ref="TRANSFER",
         ip=ip,
         device_id=device_id,
         user=user,

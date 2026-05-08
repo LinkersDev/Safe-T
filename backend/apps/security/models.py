@@ -47,7 +47,7 @@ class OTPRequest(models.Model):
         default=OTPStatus.PENDING,
     )
     attempts_count = models.PositiveSmallIntegerField(default=0)
-    max_attempts = models.PositiveSmallIntegerField(default=5)
+    max_attempts = models.PositiveSmallIntegerField(default=3)
     expires_at = models.DateTimeField()
     verified_at = models.DateTimeField(null=True, blank=True)
 

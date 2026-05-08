@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { MobileScreenLayout } from '../../../shared/layouts/MobileScreenLayout'
+import { AuthScreenLayout } from '../../../shared/layouts/AuthScreenLayout'
+import { LogoAvatar } from '../../../shared/components/LogoAvatar'
 import { Button } from '../../../shared/components/ui/Button'
-import { Card } from '../../../shared/components/ui/Card'
 import { Input } from '../../../shared/components/ui/Input'
 import { ROUTE_PATHS } from '../../../app/routing/paths'
 import { normalizeApiError } from '../../../core/api/error-normalizer'
@@ -48,7 +48,8 @@ export function LoginPage() {
       }
 
       // Real backend success — store JWT tokens and redirect by role
-      startSession(response)
+      if (!('access' in response)) return
+      startSession(response as import('../types').LoginResponse)
       const staffRoles = ['ADMIN', 'TELLER', 'TELLER_ADMIN', 'CUSTOMER_SERVICE', 'RISK_OFFICER']
       const userRole = response.user?.role ?? ''
       navigate(staffRoles.includes(userRole) ? ROUTE_PATHS.staff : ROUTE_PATHS.dashboard, { replace: true })
@@ -98,11 +99,12 @@ export function LoginPage() {
   }
 
   return (
-    <MobileScreenLayout
-      title="SafeT Secure Login"
-      subtitle="Phone-first authentication with OTP verification."
+    <AuthScreenLayout
+      title="Welcome to SaFe-T"
+      subtitle="Secure Login"
+      logo={<LogoAvatar src="/logo.png" alt="SaFe-T Logo" />}
     >
-      <Card as="form" className="space-y-4" onSubmit={handleSubmit}>
+      <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">
           <label className="text-sm font-medium text-text-secondary" htmlFor="phone">
             Phone number
@@ -177,7 +179,7 @@ export function LoginPage() {
             Forgot password?
           </button>
         </div>
-      </Card>
-    </MobileScreenLayout>
+      </form>
+    </AuthScreenLayout>
   )
 }

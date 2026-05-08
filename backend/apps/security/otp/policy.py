@@ -18,7 +18,7 @@ DEV_EXPOSE_ALLOWED_TYPES: set[str] = {
 
 
 def is_dev_otp_enabled() -> bool:
-    return bool(settings.DEBUG or getattr(settings, "ENABLE_DEV_OTP", False))
+    return bool(getattr(settings, "ENABLE_DEV_OTP", False))
 
 
 def should_expose_dev_otp(request_type: str) -> bool:

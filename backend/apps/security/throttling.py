@@ -59,6 +59,21 @@ class OTPSendThrottle(CustomWindowThrottle):
     scope = "otp_send"
 
 
+class OTPSendPhoneThrottle(CustomWindowThrottle):
+    """3 OTP send attempts per hour per phone number."""
+    scope = "otp_send_phone"
+
+    def get_cache_key(self, request, view):
+        if request.method != "POST":
+            return None
+        phone = (getattr(request, "data", {}) or {}).get("phone_number")
+        if not phone and hasattr(request, "user") and request.user and request.user.is_authenticated:
+            phone = getattr(request.user, "phone_number", None)
+        if not phone:
+            return None
+        return self.cache_format % {"scope": self.scope, "ident": phone}
+
+
 class LoginThrottle(CustomWindowThrottle):
     """5 login attempts per 5 minutes per IP."""
     scope = "login"

@@ -24,7 +24,7 @@ import logging
 
 from django.contrib.auth.hashers import check_password
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -44,6 +44,7 @@ from apps.security.exceptions import (
     OTPNotFoundError,
 )
 from apps.security.otp.policy import should_expose_dev_otp
+from apps.security.throttling import OTPSendPhoneThrottle, OTPSendThrottle
 
 from .exceptions import (
     BillProviderNotActiveError,
@@ -182,6 +183,7 @@ def transfer_recipient_lookup(request):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, IsUserFullyActive])
+@throttle_classes([OTPSendThrottle, OTPSendPhoneThrottle])
 def transfer_otp(request):
     """Send a transfer OTP to the authenticated user's phone."""
     otp_plain = send_transfer_otp(
@@ -307,6 +309,7 @@ def p2p_receive_qr_resolve(request):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, IsUserFullyActive])
+@throttle_classes([OTPSendThrottle, OTPSendPhoneThrottle])
 def qr_pay_otp(request):
     """Send a QR payment OTP scoped to a specific QR token."""
     serializer = QRPayOTPSerializer(data=request.data)
@@ -424,6 +427,7 @@ def bill_fetch(request):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, IsUserFullyActive])
+@throttle_classes([OTPSendThrottle, OTPSendPhoneThrottle])
 def bill_pay_otp(request):
     """Send a bill payment OTP scoped to a specific provider + service number."""
     serializer = BillPayOTPSerializer(data=request.data)

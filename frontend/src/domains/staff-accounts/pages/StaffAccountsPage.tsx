@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { Search, CreditCard, User, ShieldCheck, FileText, ArrowUpRight } from 'lucide-react'
 import { ROUTE_PATHS } from '../../../app/routing/paths'
 import { Badge } from '../../../shared/components/ui/Badge'
 import { Button } from '../../../shared/components/ui/Button'
-import { Card } from '../../../shared/components/ui/Card'
 import { Input } from '../../../shared/components/ui/Input'
 import { ConfirmationModal } from '../../../shared/components/ui/ConfirmationModal'
 import { StatusNoticeCard } from '../../../shared/components/ui/StatusNoticeCard'
@@ -22,6 +22,10 @@ import type { StaffAccountDetails } from '../services/staff-account-service'
 import { getCustomerProfile } from '../../teller/services/teller-service'
 
 type ActionType = 'freeze' | 'unfreeze' | 'block' | 'unblock' | 'close' | null
+
+const cardBase = 'card-hover rounded-xl border border-[#E2E8F0] bg-white p-5 relative overflow-hidden'
+const cardShadow = { boxShadow: '0 4px 20px rgba(10, 37, 64, 0.08)', transition: 'all 0.2s ease' }
+const inputOverride = 'border border-[#E2E8F0] bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 hover:border-slate-300'
 
 export function StaffAccountsPage() {
   const [lookupValue, setLookupValue] = useState('')
@@ -80,76 +84,121 @@ export function StaffAccountsPage() {
   })
 
   return (
-    <div className="space-y-4">
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="space-y-4">
-          <Card as="form" className="space-y-3" onSubmit={handleLookup}>
-            <Input
-              inputMode="tel"
-              placeholder="Phone (+E.164), account number, or account id"
-              value={lookupValue}
-              onChange={(e) => setLookupValue(e.target.value)}
-              required
-            />
-            <Input
-              placeholder="Reason (optional)"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-            />
-            <Button loading={lookupMutation.isPending} type="submit">
-              Lookup
-            </Button>
-          </Card>
+    <div className="space-y-6">
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="space-y-6">
+          {/* Lookup */}
+          <div className={`${cardBase} border-l-[3px] border-l-blue-500`} style={cardShadow}>
+            <div className="flex items-center gap-2 mb-4">
+              <Search size={18} strokeWidth={2} className="text-blue-600" />
+              <p className="text-sm font-semibold text-slate-900">Account Lookup</p>
+            </div>
+            <form onSubmit={handleLookup} className="space-y-3">
+              <Input
+                inputMode="tel"
+                placeholder="Phone (+E.164), account number, or account id"
+                value={lookupValue}
+                onChange={(e) => setLookupValue(e.target.value)}
+                required
+                className={inputOverride}
+              />
+              <Input
+                placeholder="Reason (optional)"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                className={inputOverride}
+              />
+              <Button loading={lookupMutation.isPending} type="submit">
+                Lookup
+              </Button>
+            </form>
+          </div>
 
+          {/* Account details */}
           {account && (
-            <Card className="space-y-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-text-primary">{account.label}</p>
-                  <p className="font-mono text-xs text-text-secondary">{account.accountNumber}</p>
-                  <p className="mt-1 text-sm text-text-primary">
-                    Available:{' '}
-                    <span className="font-bold">
-                      {account.currency} {Number(account.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </span>
-                  </p>
-                  <p className="text-xs text-text-secondary">
-                    Ledger: {account.currency} {Number(account.ledgerBalance ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ·
-                    Blocked: {account.currency} {Number(account.blockedAmount ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                  </p>
+            <div className={`${cardBase} border-l-[3px] border-l-blue-500`} style={cardShadow}>
+              <div className="flex items-start justify-between gap-3 mb-5">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                    <CreditCard size={20} strokeWidth={2} />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-900">{account.label}</p>
+                    <p className="font-mono text-xs text-slate-500 mt-0.5">{account.accountNumber}</p>
+                    <p className="mt-2 text-sm text-slate-700 leading-relaxed">
+                      Available:{' '}
+                      <span className="font-bold text-slate-900">
+                        {account.currency} {Number(account.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      </span>
+                    </p>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Ledger: {account.currency} {Number(account.ledgerBalance ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ·
+                      Blocked: {account.currency} {Number(account.blockedAmount ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
                 </div>
                 <Badge variant={account.status === 'ACTIVE' ? 'success' : 'danger'}>
                   {account.status}
                 </Badge>
               </div>
 
-              <div className="grid gap-2 sm:grid-cols-2">
-                {canFreeze && !isFrozen && !isBlocked && !isClosed && (
-                  <Button type="button" onClick={() => setPendingAction('freeze')} variant="secondary" title="Freeze this account temporarily">
-                    Freeze
-                  </Button>
-                )}
-                {canUnfreeze && isFrozen && (
-                  <Button type="button" onClick={() => setPendingAction('unfreeze')} variant="secondary" title="Restore account access">
-                    Unfreeze
-                  </Button>
-                )}
-                {canBlock && isBlocked && (
-                  <Button type="button" onClick={() => setPendingAction('unblock')} variant="secondary" title="Restore account access after a block">
-                    Unblock
-                  </Button>
-                )}
-                {canBlock && !isBlocked && !isClosed && (
-                  <Button type="button" onClick={() => setPendingAction('block')} variant="danger" title="Permanently block this account">
-                    Block
-                  </Button>
-                )}
-                {canBlock && !isBlocked && !isClosed && (
-                  <Button type="button" onClick={() => setPendingAction('close')} variant="danger" title="Close this account after funds reconciliation">
-                    Close Account
-                  </Button>
-                )}
+              {/* Action buttons with visual hierarchy */}
+              <div className="space-y-3">
+                <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Account Actions</p>
+                <div className="flex flex-wrap gap-2">
+                  {canFreeze && !isFrozen && !isBlocked && !isClosed && (
+                    <button
+                      type="button"
+                      onClick={() => setPendingAction('freeze')}
+                      title="Freeze this account temporarily"
+                      className="rounded-lg border border-[#0A2540] bg-white px-4 py-2 text-sm font-semibold text-[#0A2540] hover:bg-slate-50 transition-all"
+                    >
+                      Freeze
+                    </button>
+                  )}
+                  {canUnfreeze && isFrozen && (
+                    <button
+                      type="button"
+                      onClick={() => setPendingAction('unfreeze')}
+                      title="Restore account access"
+                      className="rounded-lg border border-[#0A2540] bg-white px-4 py-2 text-sm font-semibold text-[#0A2540] hover:bg-slate-50 transition-all"
+                    >
+                      Unfreeze
+                    </button>
+                  )}
+                  {canBlock && isBlocked && (
+                    <button
+                      type="button"
+                      onClick={() => setPendingAction('unblock')}
+                      title="Restore account access after a block"
+                      className="rounded-lg border border-[#0A2540] bg-white px-4 py-2 text-sm font-semibold text-[#0A2540] hover:bg-slate-50 transition-all"
+                    >
+                      Unblock
+                    </button>
+                  )}
+                  {canBlock && !isBlocked && !isClosed && (
+                    <button
+                      type="button"
+                      onClick={() => setPendingAction('block')}
+                      title="Permanently block this account"
+                      className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 shadow-sm hover:shadow-md transition-all"
+                    >
+                      Block
+                    </button>
+                  )}
+                  {canBlock && !isBlocked && !isClosed && (
+                    <button
+                      type="button"
+                      onClick={() => setPendingAction('close')}
+                      title="Close this account after funds reconciliation"
+                      className="rounded-lg bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600 shadow-sm hover:shadow-md transition-all"
+                    >
+                      Close Account
+                    </button>
+                  )}
+                </div>
               </div>
+
               {account && !canAnyRestriction && !isClosed && (
                 <StatusNoticeCard
                   title="View-only access"
@@ -164,11 +213,12 @@ export function StaffAccountsPage() {
                   variant="info"
                 />
               )}
-            </Card>
+            </div>
           )}
         </div>
 
-        <div className="space-y-4">
+        {/* Customer / KYC */}
+        <div className="space-y-6">
           {!account ? (
             <StatusNoticeCard
               title="Customer snapshot"
@@ -176,28 +226,36 @@ export function StaffAccountsPage() {
               variant="info"
             />
           ) : (
-            <Card className="space-y-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-text-primary">{account.owner?.name ?? 'Customer'}</p>
-                  <p className="text-xs text-text-tertiary">{account.owner?.phoneNumber ?? '—'}</p>
+            <div className={`${cardBase} border-l-[3px] border-l-emerald-500`} style={cardShadow}>
+              {/* Customer header */}
+              <div className="flex items-start justify-between gap-3 mb-5">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                    <User size={20} strokeWidth={2} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">{account.owner?.name ?? 'Customer'}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{account.owner?.phoneNumber ?? '—'}</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs text-text-tertiary">KYC</p>
-                  <p className="text-sm font-semibold text-text-primary">{account.owner?.kycStatus ?? '—'}</p>
+                <div className="flex items-center gap-2">
+                  <ShieldCheck size={14} strokeWidth={2} className="text-emerald-600" />
+                  <span className="text-xs font-semibold text-emerald-600">{account.owner?.kycStatus ?? '—'}</span>
                 </div>
               </div>
 
               {canReviewKyc && ownerId ? (
-                <Link to={ROUTE_PATHS.staffTellerCustomerProfile(ownerId)}>
-                  <Button type="button" variant="secondary" className="w-full sm:w-auto">
-                    Edit customer KYC
-                  </Button>
+                <Link
+                  to={ROUTE_PATHS.staffTellerCustomerProfile(ownerId)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#0A2540] bg-white px-4 py-2 text-sm font-semibold text-[#0A2540] hover:bg-slate-50 transition-all mb-5"
+                >
+                  <ArrowUpRight size={16} strokeWidth={2} />
+                  Edit customer KYC
                 </Link>
               ) : null}
 
               {customerQuery.isLoading ? (
-                <p className="text-sm text-text-secondary">Loading KYC profile…</p>
+                <p className="text-sm text-slate-500">Loading KYC profile…</p>
               ) : customerQuery.isError ? (
                 <StatusNoticeCard
                   title="KYC data unavailable"
@@ -205,41 +263,101 @@ export function StaffAccountsPage() {
                   variant="warning"
                 />
               ) : (
-                <>
+                <div className="space-y-6">
+                  {/* KYC completeness */}
                   <div>
-                    <p className="text-sm font-semibold text-text-primary">KYC completeness</p>
-                    <p className="mt-1 text-xs text-text-tertiary">
-                      {customerQuery.data?.kyc?.completeness?.is_valid ? 'Complete' : 'Incomplete'} · Missing fields:{' '}
-                      {(customerQuery.data?.kyc?.completeness?.missing_fields ?? []).join(', ') || '—'} · Missing docs:{' '}
-                      {(customerQuery.data?.kyc?.completeness?.missing_documents ?? []).join(', ') || '—'}
-                    </p>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck size={16} strokeWidth={2} className="text-slate-500" />
+                        <p className="text-sm font-semibold text-slate-900">KYC Completeness</p>
+                      </div>
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                          customerQuery.data?.kyc?.completeness?.is_valid
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-amber-100 text-amber-700'
+                        }`}
+                      >
+                        {customerQuery.data?.kyc?.completeness?.is_valid ? 'Approved' : 'Incomplete'}
+                      </span>
+                    </div>
+
+                    {/* Missing fields as readable list */}
+                    {!customerQuery.data?.kyc?.completeness?.is_valid && (
+                      <div className="space-y-2">
+                        {(() => {
+                          const missingFields = customerQuery.data?.kyc?.completeness?.missing_fields ?? []
+                          const missingDocs = customerQuery.data?.kyc?.completeness?.missing_documents ?? []
+                          return (
+                            <>
+                              {missingFields.length > 0 && (
+                                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+                                  <p className="text-xs font-semibold text-amber-700 mb-1.5">Missing Fields</p>
+                                  <ul className="space-y-1">
+                                    {missingFields.map((field, i) => (
+                                      <li key={i} className="text-xs text-amber-700 flex items-center gap-1.5">
+                                        <span className="h-1 w-1 rounded-full bg-amber-500" />
+                                        {String(field).replace(/_/g, ' ')}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {missingDocs.length > 0 && (
+                                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+                                  <p className="text-xs font-semibold text-amber-700 mb-1.5">Missing Documents</p>
+                                  <ul className="space-y-1">
+                                    {missingDocs.map((doc, i) => (
+                                      <li key={i} className="text-xs text-amber-700 flex items-center gap-1.5">
+                                        <span className="h-1 w-1 rounded-full bg-amber-500" />
+                                        {String(doc).replace(/_/g, ' ')}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {missingFields.length === 0 && missingDocs.length === 0 && (
+                                <p className="text-xs text-slate-500">All fields and documents are present, but KYC is not yet approved.</p>
+                              )}
+                            </>
+                          )
+                        })()}
+                      </div>
+                    )}
+                    {customerQuery.data?.kyc?.completeness?.is_valid && (
+                      <p className="text-xs text-slate-500">All KYC fields and documents are complete.</p>
+                    )}
                   </div>
 
+                  {/* KYC profile */}
                   <div>
-                    <p className="text-sm font-semibold text-text-primary">KYC profile</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <User size={16} strokeWidth={2} className="text-slate-500" />
+                      <p className="text-sm font-semibold text-slate-900">KYC Profile</p>
+                    </div>
                     {customerQuery.data?.kyc?.profile ? (
-                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                        <div>
-                          <p className="text-[11px] text-text-tertiary">Legal name</p>
-                          <p className="text-sm text-text-primary">{String((customerQuery.data.kyc.profile as any).legal_full_name ?? '—')}</p>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="rounded-lg bg-slate-50 p-3">
+                          <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Legal name</p>
+                          <p className="text-sm text-slate-900 mt-1">{String((customerQuery.data.kyc.profile as any).legal_full_name ?? '—')}</p>
                         </div>
-                        <div>
-                          <p className="text-[11px] text-text-tertiary">DOB</p>
-                          <p className="text-sm text-text-primary">{String((customerQuery.data.kyc.profile as any).date_of_birth ?? '—')}</p>
+                        <div className="rounded-lg bg-slate-50 p-3">
+                          <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">DOB</p>
+                          <p className="text-sm text-slate-900 mt-1">{String((customerQuery.data.kyc.profile as any).date_of_birth ?? '—')}</p>
                         </div>
-                        <div>
-                          <p className="text-[11px] text-text-tertiary">Nationality</p>
-                          <p className="text-sm text-text-primary">{String((customerQuery.data.kyc.profile as any).nationality ?? '—')}</p>
+                        <div className="rounded-lg bg-slate-50 p-3">
+                          <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Nationality</p>
+                          <p className="text-sm text-slate-900 mt-1">{String((customerQuery.data.kyc.profile as any).nationality ?? '—')}</p>
                         </div>
-                        <div>
-                          <p className="text-[11px] text-text-tertiary">ID</p>
-                          <p className="text-sm text-text-primary">
+                        <div className="rounded-lg bg-slate-50 p-3">
+                          <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">ID</p>
+                          <p className="text-sm text-slate-900 mt-1">
                             {String((customerQuery.data.kyc.profile as any).id_type ?? '—')} · {String((customerQuery.data.kyc.profile as any).id_number ?? '—')}
                           </p>
                         </div>
-                        <div className="sm:col-span-2">
-                          <p className="text-[11px] text-text-tertiary">Address</p>
-                          <p className="text-sm text-text-primary">
+                        <div className="sm:col-span-2 rounded-lg bg-slate-50 p-3">
+                          <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Address</p>
+                          <p className="text-sm text-slate-900 mt-1">
                             {String((customerQuery.data.kyc.profile as any).address_line1 ?? '—')},{' '}
                             {String((customerQuery.data.kyc.profile as any).address_city ?? '—')},{' '}
                             {String((customerQuery.data.kyc.profile as any).address_country ?? '—')}
@@ -247,26 +365,34 @@ export function StaffAccountsPage() {
                         </div>
                       </div>
                     ) : (
-                      <p className="mt-1 text-sm text-text-secondary">No KYC profile submitted yet.</p>
+                      <p className="text-sm text-slate-500">No KYC profile submitted yet.</p>
                     )}
                   </div>
 
+                  {/* KYC documents */}
                   <div>
-                    <p className="text-sm font-semibold text-text-primary">KYC documents</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <FileText size={16} strokeWidth={2} className="text-slate-500" />
+                      <p className="text-sm font-semibold text-slate-900">KYC Documents</p>
+                    </div>
                     {customerQuery.data?.kyc?.documents?.length ? (
-                      <div className="mt-2 space-y-2">
+                      <div className="space-y-3">
                         {customerQuery.data.kyc.documents.map((d: any) => (
-                          <div key={String(d.id ?? d.file)} className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2">
+                          <div
+                            key={String(d.id ?? d.file)}
+                            className="flex items-center justify-between gap-2 rounded-xl border border-[#E2E8F0] bg-white px-4 py-3"
+                            style={{ boxShadow: '0 2px 8px rgba(10, 37, 64, 0.04)' }}
+                          >
                             <div>
-                              <p className="text-xs font-semibold text-text-primary">{String(d.document_type ?? '').replace(/_/g, ' ')}</p>
-                              <p className="text-[11px] text-text-tertiary">{String(d.status ?? '')}</p>
+                              <p className="text-xs font-semibold text-slate-900">{String(d.document_type ?? '').replace(/_/g, ' ')}</p>
+                              <p className="text-[11px] text-slate-500 mt-0.5">{String(d.status ?? '')}</p>
                             </div>
                             {d.file ? (
                               <a
                                 href={String(d.file)}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="rounded-lg border border-border bg-surface-secondary px-2.5 py-1 text-xs font-semibold text-text-primary hover:bg-surface-tertiary"
+                                className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all"
                               >
                                 View
                               </a>
@@ -275,12 +401,12 @@ export function StaffAccountsPage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="mt-1 text-sm text-text-secondary">No documents uploaded yet.</p>
+                      <p className="text-sm text-slate-500">No documents uploaded yet.</p>
                     )}
                   </div>
-                </>
+                </div>
               )}
-            </Card>
+            </div>
           )}
         </div>
       </div>

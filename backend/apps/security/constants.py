@@ -76,6 +76,6 @@ MAX_FAILED_LOGIN_ATTEMPTS = 5
 # Window in minutes to count failures
 FAILED_LOGIN_WINDOW_MINUTES = 30
 # OTP validity in minutes
-OTP_EXPIRY_MINUTES = 3
+OTP_EXPIRY_MINUTES = 5
 # Max OTP attempts before marking FAILED
 OTP_MAX_ATTEMPTS = 3

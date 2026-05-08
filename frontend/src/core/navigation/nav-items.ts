@@ -1,10 +1,25 @@
+import type { LucideIcon } from 'lucide-react'
 import type { RoleCode } from '../state/auth-state'
 import { ROUTE_PATHS } from '../../app/routing/paths'
+import {
+  LayoutDashboard,
+  Users,
+  ShieldCheck,
+  Landmark,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  BookOpen,
+  MessageSquare,
+  AlertTriangle,
+  BarChart3,
+  UserPlus,
+  ArrowLeftRight,
+} from 'lucide-react'
 
 export type NavItem = {
   label: string
   path: string
-  icon: string
+  icon: LucideIcon
   permission?: string
   group?: 'main' | 'support'
   capability?: keyof typeof BACKEND_CAPABILITIES
@@ -21,46 +36,46 @@ const BACKEND_CAPABILITIES = {
 } as const
 
 const CUSTOMER_NAV: NavItem[] = [
-  { label: 'Dashboard',      path: ROUTE_PATHS.dashboard,    icon: '⊞', group: 'main' },
-  { label: 'Transactions',   path: ROUTE_PATHS.ledger,        icon: '↕', group: 'main' },
-  { label: 'Transfer',       path: ROUTE_PATHS.transfer,      icon: '→', group: 'main' },
-  { label: 'QR Pay',         path: ROUTE_PATHS.qrPayment,     icon: '▣', group: 'main' },
-  { label: 'Bill Payment',   path: ROUTE_PATHS.billPayment,   icon: '⚡', group: 'main' },
-  { label: 'My Tickets',     path: ROUTE_PATHS.tickets,       icon: '✉', group: 'support' },
-  { label: 'Notifications',  path: ROUTE_PATHS.notifications, icon: '🔔', group: 'support' },
-  { label: 'My Profile',     path: ROUTE_PATHS.profile,       icon: '⚙', group: 'support' },
+  { label: 'Dashboard',      path: ROUTE_PATHS.dashboard,    icon: LayoutDashboard, group: 'main' },
+  { label: 'Transactions',   path: ROUTE_PATHS.ledger,        icon: ArrowLeftRight, group: 'main' },
+  { label: 'Transfer',       path: ROUTE_PATHS.transfer,      icon: ArrowLeftRight, group: 'main' },
+  { label: 'QR Pay',         path: ROUTE_PATHS.qrPayment,     icon: LayoutDashboard, group: 'main' },
+  { label: 'Bill Payment',   path: ROUTE_PATHS.billPayment,   icon: Landmark, group: 'main' },
+  { label: 'My Tickets',     path: ROUTE_PATHS.tickets,       icon: MessageSquare, group: 'support' },
+  { label: 'Notifications',  path: ROUTE_PATHS.notifications, icon: LayoutDashboard, group: 'support' },
+  { label: 'My Profile',     path: ROUTE_PATHS.profile,       icon: LayoutDashboard, group: 'support' },
 ]
 
 const ADMIN_NAV: NavItem[] = [
-  { label: 'Overview',      path: ROUTE_PATHS.staff,          icon: '⊞' },
-  { label: 'Users',         path: ROUTE_PATHS.staffUsers,     icon: '👤', permission: 'view_all_users', capability: 'staffUsers' },
-  { label: 'KYC Review',    path: ROUTE_PATHS.staffKyc,       icon: '✓',  permission: 'review_kyc', capability: 'staffKyc' },
-  { label: 'Accounts',      path: ROUTE_PATHS.staffAccounts,  icon: '🏦', permission: 'view_all_accounts', capability: 'staffAccounts' },
-  { label: 'Deposit',       path: ROUTE_PATHS.staffTellerDeposit, icon: '⬇', permission: 'staff_deposit' },
-  { label: 'Withdraw',      path: ROUTE_PATHS.staffTellerWithdraw, icon: '⬆', permission: 'staff_withdraw' },
-  { label: 'Ledger',        path: ROUTE_PATHS.staffLedger,    icon: '📒', permission: 'view_all_transactions', capability: 'staffLedger' },
-  { label: 'Support',       path: ROUTE_PATHS.staffSupport,   icon: '✉',  permission: 'manage_support_tickets', capability: 'staffSupport' },
-  { label: 'Risk Alerts',   path: ROUTE_PATHS.staffRisk,      icon: '⚠',  permission: 'review_fraud_alert', capability: 'staffRisk' },
-  { label: 'Reports',       path: ROUTE_PATHS.staffReports,   icon: '📊', permission: 'view_all_transactions', capability: 'staffReports' },
+  { label: 'Overview',      path: ROUTE_PATHS.staff,          icon: LayoutDashboard },
+  { label: 'Users',         path: ROUTE_PATHS.staffUsers,     icon: Users, permission: 'view_all_users', capability: 'staffUsers' },
+  { label: 'KYC Review',    path: ROUTE_PATHS.staffKyc,       icon: ShieldCheck,  permission: 'review_kyc', capability: 'staffKyc' },
+  { label: 'Accounts',      path: ROUTE_PATHS.staffAccounts,  icon: Landmark, permission: 'view_all_accounts', capability: 'staffAccounts' },
+  { label: 'Deposit',       path: ROUTE_PATHS.staffTellerDeposit, icon: ArrowDownToLine, permission: 'staff_deposit' },
+  { label: 'Withdraw',      path: ROUTE_PATHS.staffTellerWithdraw, icon: ArrowUpFromLine, permission: 'staff_withdraw' },
+  { label: 'Ledger',        path: ROUTE_PATHS.staffLedger,    icon: BookOpen, permission: 'view_all_transactions', capability: 'staffLedger' },
+  { label: 'Support',       path: ROUTE_PATHS.staffSupport,   icon: MessageSquare,  permission: 'manage_support_tickets', capability: 'staffSupport' },
+  { label: 'Risk Alerts',   path: ROUTE_PATHS.staffRisk,      icon: AlertTriangle,  permission: 'review_fraud_alert', capability: 'staffRisk' },
+  { label: 'Reports',       path: ROUTE_PATHS.staffReports,   icon: BarChart3, permission: 'view_all_transactions', capability: 'staffReports' },
 ]
 
 const TELLER_NAV: NavItem[] = [
-  { label: 'Overview',   path: ROUTE_PATHS.staff,         icon: '⊞' },
-  { label: 'Accounts',   path: ROUTE_PATHS.staffAccounts, icon: '🏦', permission: 'view_all_accounts' },
-  { label: 'Register',   path: ROUTE_PATHS.staffTellerRegisterCustomer, icon: '＋', permission: 'staff_register_customer' },
-  { label: 'Deposit',    path: ROUTE_PATHS.staffTellerDeposit, icon: '⬇', permission: 'staff_deposit' },
-  { label: 'Withdraw',   path: ROUTE_PATHS.staffTellerWithdraw, icon: '⬆', permission: 'staff_withdraw' },
-  { label: 'Transactions', path: ROUTE_PATHS.staffTellerAccountTransactions, icon: '↕', permission: 'staff_view_account_transactions' },
+  { label: 'Overview',   path: ROUTE_PATHS.staff,         icon: LayoutDashboard },
+  { label: 'Accounts',   path: ROUTE_PATHS.staffAccounts, icon: Landmark, permission: 'view_all_accounts' },
+  { label: 'Register',   path: ROUTE_PATHS.staffTellerRegisterCustomer, icon: UserPlus, permission: 'staff_register_customer' },
+  { label: 'Deposit',    path: ROUTE_PATHS.staffTellerDeposit, icon: ArrowDownToLine, permission: 'staff_deposit' },
+  { label: 'Withdraw',   path: ROUTE_PATHS.staffTellerWithdraw, icon: ArrowUpFromLine, permission: 'staff_withdraw' },
+  { label: 'Transactions', path: ROUTE_PATHS.staffTellerAccountTransactions, icon: ArrowLeftRight, permission: 'staff_view_account_transactions' },
 ]
 
 const RISK_NAV: NavItem[] = [
-  { label: 'Overview',    path: ROUTE_PATHS.staff,    icon: '⊞' },
-  { label: 'Risk Alerts', path: ROUTE_PATHS.staffRisk, icon: '⚠', permission: 'review_fraud_alert' },
+  { label: 'Overview',    path: ROUTE_PATHS.staff,    icon: LayoutDashboard },
+  { label: 'Risk Alerts', path: ROUTE_PATHS.staffRisk, icon: AlertTriangle, permission: 'review_fraud_alert' },
 ]
 
 const CS_NAV: NavItem[] = [
-  { label: 'Overview',  path: ROUTE_PATHS.staff,        icon: '⊞' },
-  { label: 'Support',   path: ROUTE_PATHS.staffSupport,  icon: '✉', permission: 'manage_support_tickets' },
+  { label: 'Overview',  path: ROUTE_PATHS.staff,        icon: LayoutDashboard },
+  { label: 'Support',   path: ROUTE_PATHS.staffSupport,  icon: MessageSquare, permission: 'manage_support_tickets' },
 ]
 
 export const NAV_ITEMS: Partial<Record<RoleCode, NavItem[]>> = {
