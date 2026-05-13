@@ -1,8 +1,10 @@
 import type { DeviceIdentity } from './types'
+import { createLogger } from '../../utils/logger'
 
+const logger = createLogger('WebDeviceIdentity')
 const DEVICE_KEY = 'safet.device.id'
 
-function generateDeviceId() {
+function generateDeviceId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID()
   }
@@ -11,18 +13,24 @@ function generateDeviceId() {
 }
 
 export class WebDeviceIdentity implements DeviceIdentity {
-  getDeviceId() {
-    const cached = window.localStorage.getItem(DEVICE_KEY)
-    if (cached) {
-      return cached
-    }
+  async getDeviceId(): Promise<string> {
+    try {
+      const cached = window.localStorage.getItem(DEVICE_KEY)
+      if (cached) {
+        return cached
+      }
 
-    const generated = generateDeviceId()
-    window.localStorage.setItem(DEVICE_KEY, generated)
-    return generated
+      const generated = generateDeviceId()
+      window.localStorage.setItem(DEVICE_KEY, generated)
+      logger.info('Generated new device ID')
+      return generated
+    } catch (error) {
+      logger.error('Failed to get device ID', error)
+      return generateDeviceId()
+    }
   }
 
-  getDeviceName() {
+  async getDeviceName(): Promise<string> {
     return 'SafeT Web Client'
   }
 }

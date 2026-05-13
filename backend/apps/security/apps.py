@@ -8,4 +8,6 @@ class SecurityConfig(AppConfig):
 
     def ready(self):
         """Import bootstrap module to initialize TNEENWH on app startup."""
-        from apps.security.otp import tneenwh_bootstrap  # noqa: F401
+        # DISABLED: TNEENWH bootstrap blocks server startup in dev
+        # from apps.security.otp import tneenwh_bootstrap  # noqa: F401
+        pass

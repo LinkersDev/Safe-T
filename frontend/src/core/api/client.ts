@@ -1,6 +1,6 @@
 import axios from 'axios'
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios'
-import { clearTokens, readAccessToken, readRefreshToken, saveTokens } from '../auth/token-service'
+import { clearTokensAsync, readAccessTokenAsync, readRefreshTokenAsync, saveTokensAsync } from '../auth/token-service'
 import { getDeviceIdentity } from '../platform/device'
 import { clearSessionState } from '../state/auth-state'
 import { emitSessionExpired } from '../events/session-events'
@@ -16,16 +16,19 @@ const apiClient = axios.create({
   },
 })
 
-apiClient.interceptors.request.use((config) => {
-  const accessToken = readAccessToken()
+apiClient.interceptors.request.use(async (config) => {
+  const accessToken = await readAccessTokenAsync()
   const deviceIdentity = getDeviceIdentity()
 
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`
   }
 
-  config.headers['X-Device-Id'] = deviceIdentity.getDeviceId()
-  config.headers['X-Device-Name'] = deviceIdentity.getDeviceName()
+  const deviceId = await deviceIdentity.getDeviceId()
+  const deviceName = await deviceIdentity.getDeviceName()
+  
+  config.headers['X-Device-Id'] = deviceId
+  config.headers['X-Device-Name'] = deviceName
 
   return config
 })
@@ -33,7 +36,7 @@ apiClient.interceptors.request.use((config) => {
 let refreshPromise: Promise<string | null> | null = null
 
 async function refreshAccessToken() {
-  const refreshToken = readRefreshToken()
+  const refreshToken = await readRefreshTokenAsync()
   if (!refreshToken) {
     return null
   }
@@ -50,7 +53,7 @@ async function refreshAccessToken() {
       return null
     }
 
-    saveTokens({ accessToken: nextAccess, refreshToken: nextRefresh })
+    await saveTokensAsync({ accessToken: nextAccess, refreshToken: nextRefresh })
     return nextAccess
   } catch {
     return null
@@ -78,13 +81,12 @@ apiClient.interceptors.response.use(
     const refreshedAccessToken = await refreshPromise
 
     if (!refreshedAccessToken) {
-      clearTokens()
+      await clearTokensAsync()
       clearSessionState()
       emitSessionExpired()
       return Promise.reject(error)
     }
 
-    requestConfig.headers = requestConfig.headers ?? {}
     requestConfig.headers.Authorization = `Bearer ${refreshedAccessToken}`
     return apiClient(requestConfig)
   },

@@ -45,7 +45,7 @@ TNEENWH_CHANNEL_SECRET = env("TNEENWH_CHANNEL_SECRET")
 TNEENWH_EMAIL = env("TNEENWH_EMAIL")
 TNEENWH_PASSWORD = env("TNEENWH_PASSWORD")
 TNEENWH_HTTP_USER_AGENT = env("TNEENWH_HTTP_USER_AGENT")
-ALLOWED_HOSTS: list[str] = []
+ALLOWED_HOSTS: list[str] = ["localhost", "127.0.0.1", "192.168.13.105"]
 
 # ---------------------------------------------------------------------------
 # Application definition
@@ -239,6 +239,12 @@ SKIP_OTP_IN_DEV = env.bool("SKIP_OTP_IN_DEV", default=False)
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://192.168.13.105:3000",
+    "capacitor://localhost",
+    "ionic://localhost",
+    "http://localhost",
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [

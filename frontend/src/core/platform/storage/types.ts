@@ -4,8 +4,8 @@ export type AuthTokens = {
 }
 
 export interface TokenStorage {
-  readAccessToken(): string | null
-  readRefreshToken(): string | null
-  saveTokens(tokens: AuthTokens): void
-  clearTokens(): void
+  readAccessToken(): Promise<string | null>
+  readRefreshToken(): Promise<string | null>
+  saveTokens(tokens: AuthTokens): Promise<void>
+  clearTokens(): Promise<void>
 }

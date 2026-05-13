@@ -6,10 +6,23 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:mobile": "tsc -b && vite build --mode mobile && npx cap sync",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cap:sync": "npx cap sync",
+    "cap:open:android": "npx cap open android",
+    "cap:run:android": "npm run build:mobile && npx cap run android",
+    "android:dev": "npm run build:mobile && npx cap run android -l --external"
   },
   "dependencies": {
+    "@capacitor/app": "^6.0.3",
+    "@capacitor/core": "^6.2.1",
+    "@capacitor/device": "^6.0.3",
+    "@capacitor/keyboard": "^6.0.4",
+    "@capacitor/network": "^6.0.4",
+    "@capacitor/preferences": "^6.0.4",
+    "@capacitor/splash-screen": "^6.0.4",
+    "@capacitor/status-bar": "^6.0.3",
     "@ionic/react": "^8.1.0",
     "@tanstack/react-query": "^5.100.5",
     "axios": "^1.15.2",
@@ -21,6 +34,8 @@
     "react-router-dom": "^6.30.1"
   },
   "devDependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/cli": "^6.2.1",
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.12.2",
     "@types/qrcode": "^1.5.6",

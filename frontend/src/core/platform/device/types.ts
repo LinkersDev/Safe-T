@@ -1,4 +1,4 @@
 export interface DeviceIdentity {
-  getDeviceId(): string
-  getDeviceName(): string
+  getDeviceId(): Promise<string>
+  getDeviceName(): Promise<string>
 }
