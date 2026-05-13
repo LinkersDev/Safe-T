@@ -38,9 +38,12 @@ def get_transactions_for_customer(
 ) -> QuerySet:
     entry_qs = TransactionEntry.objects.select_related("account__user").order_by("sequence_no")
     qs = (
-        Transaction.objects.filter(customer=customer)
+        Transaction.objects.filter(
+            Q(customer=customer) | Q(entries__account__user=customer)
+        )
         .select_related("currency", "initiated_by")
         .prefetch_related(Prefetch("entries", queryset=entry_qs))
+        .distinct()
     )
     if status:
         qs = qs.filter(status=status)

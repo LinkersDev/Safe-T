@@ -21,6 +21,7 @@ type BackendTransaction = {
   description: string
   occurred_at: string
   counterparty_display?: string
+  direction?: 'incoming' | 'outgoing'
 }
 
 function mapTransaction(transaction: BackendTransaction): Transaction {
@@ -34,6 +35,7 @@ function mapTransaction(transaction: BackendTransaction): Transaction {
     description: transaction.description,
     createdAt: transaction.occurred_at,
     counterpartyDisplay: transaction.counterparty_display,
+    direction: transaction.direction,
   }
 }
 

@@ -29,10 +29,23 @@ export type FraudAlert = {
   severity: string
   status: string
   riskScore: string
+  mlFraudProbability: number | null
+  ruleBasedScore: number | null
+  combinedScore: number | null
   userName: string | null
+  userPhone: string | null
   accountNumber: string | null
   txReference: string | null
+  transactionType: string | null
+  transactionAmount: string | null
+  transactionCurrency: string | null
+  loginDeviceId: string | null
+  loginIpAddress: string | null
+  loginLocation: string | null
+  rulesTriggered: string[]
+  autoActionTaken: string
   createdAt: string
+  updatedAt: string
 }
 
 export type AdminSummary = {

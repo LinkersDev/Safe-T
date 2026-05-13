@@ -57,6 +57,11 @@ class FraudAlert(models.Model):
     # Human-readable list of rules that fired (e.g. ["Large transaction: USD 10000"])
     rules_triggered = models.JSONField(default=list)
 
+    # ML hybrid scoring fields
+    ml_fraud_probability = models.FloatField(null=True, blank=True, help_text="ML model fraud probability (0-1)")
+    rule_based_score = models.IntegerField(null=True, blank=True, help_text="Original rule-based score")
+    combined_score = models.IntegerField(default=0, help_text="Hybrid score (ML + rules)")
+
     # Records any automatic action taken by the engine
     auto_action_taken = models.CharField(max_length=50, blank=True)
 

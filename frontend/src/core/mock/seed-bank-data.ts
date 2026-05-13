@@ -19,6 +19,7 @@ type MockTransaction = {
   description: string
   createdAt: string
   counterpartyDisplay?: string
+  direction?: 'incoming' | 'outgoing'
 }
 
 type MockKycDocument = {
@@ -64,6 +65,7 @@ const transactionsByUserId = new Map<string, MockTransaction[]>([
         description: 'Transfer to beneficiary',
         createdAt: now,
         counterpartyDisplay: 'To: Mock Teller',
+        direction: 'outgoing',
       },
       {
         id: 'mock-tx-2',
@@ -75,6 +77,7 @@ const transactionsByUserId = new Map<string, MockTransaction[]>([
         description: 'QR payment processing',
         createdAt: now,
         counterpartyDisplay: 'To: Test Shop',
+        direction: 'outgoing',
       },
       {
         id: 'mock-tx-3',
@@ -86,6 +89,7 @@ const transactionsByUserId = new Map<string, MockTransaction[]>([
         description: 'Bill payment failed',
         createdAt: now,
         counterpartyDisplay: 'To: National Electricity',
+        direction: 'outgoing',
       },
       {
         id: 'mock-tx-4',
@@ -97,6 +101,7 @@ const transactionsByUserId = new Map<string, MockTransaction[]>([
         description: 'Reversed transfer',
         createdAt: now,
         counterpartyDisplay: 'To: Mock Admin',
+        direction: 'outgoing',
       },
     ],
   ],
@@ -176,6 +181,7 @@ export function buildMockPaymentTransaction(params: {
     description: params.description,
     createdAt: new Date().toISOString(),
     counterpartyDisplay: params.type === 'TRANSFER' ? 'To: Recipient' : undefined,
+    direction: 'outgoing',
   }
 
   if (account) {

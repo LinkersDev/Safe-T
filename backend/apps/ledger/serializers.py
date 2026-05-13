@@ -14,9 +14,9 @@ def _account_party_label(account) -> str | None:
     return name or None
 
 
-def _counterparty_display_for_customer(transaction: Transaction) -> str:
+def _counterparty_display_for_customer(transaction: Transaction, viewer_id: int | None = None) -> str:
     """Human-readable counterparty for the customer-facing ledger list."""
-    customer_id = transaction.customer_id
+    customer_id = viewer_id or transaction.customer_id
     if customer_id is None:
         return "—"
 
@@ -148,7 +148,11 @@ class TransactionSerializer(serializers.ModelSerializer):
         ]
 
     def get_counterparty_display(self, obj: Transaction) -> str:
-        return _counterparty_display_for_customer(obj)
+        viewer_id = None
+        request = self.context.get('request')
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            viewer_id = request.user.pk
+        return _counterparty_display_for_customer(obj, viewer_id)
 
     def get_teller_operation(self, obj: Transaction):
         try:
@@ -161,6 +165,7 @@ class TransactionListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for list views — no nested entries."""
     currency_code = serializers.CharField(source="currency_id", read_only=True)
     counterparty_display = serializers.SerializerMethodField()
+    direction = serializers.SerializerMethodField()
 
     class Meta:
         model = Transaction
@@ -176,10 +181,34 @@ class TransactionListSerializer(serializers.ModelSerializer):
             "occurred_at",
             "completed_at",
             "counterparty_display",
+            "direction",
         ]
 
     def get_counterparty_display(self, obj: Transaction) -> str:
-        return _counterparty_display_for_customer(obj)
+        viewer_id = None
+        request = self.context.get('request')
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            viewer_id = request.user.pk
+        return _counterparty_display_for_customer(obj, viewer_id)
+
+    def get_direction(self, obj: Transaction) -> str:
+        """Return 'incoming', 'outgoing', or 'unknown' based on the requesting user's entries."""
+        request = self.context.get('request')
+        if not request or not hasattr(request, 'user') or not request.user.is_authenticated:
+            return "unknown"
+
+        user = request.user
+        user_account_ids = set(user.accounts.values_list('pk', flat=True))
+        if not user_account_ids:
+            return "unknown"
+
+        for entry in obj.entries.all():
+            if entry.account_id in user_account_ids:
+                if entry.entry_type == EntryType.CREDIT:
+                    return "incoming"
+                elif entry.entry_type in (EntryType.DEBIT, EntryType.FEE):
+                    return "outgoing"
+        return "unknown"
 
 
 class ReverseTransactionSerializer(serializers.Serializer):

@@ -85,9 +85,9 @@ def create_otp(
     ).update(status=OTPStatus.CANCELLED)
 
     otp_plain = _generate_otp_code()
-    print(f"[DEBUG] create_otp called — DEBUG={settings.DEBUG} ENABLE_DEV_OTP={getattr(settings, 'ENABLE_DEV_OTP', 'NOT_SET')}")
-    print(f"[DEBUG] OTP GENERATED: {otp_plain}")
     if settings.DEBUG and getattr(settings, "ENABLE_DEV_OTP", False):
+        print(f"[DEBUG] create_otp called — DEBUG={settings.DEBUG} ENABLE_DEV_OTP={getattr(settings, 'ENABLE_DEV_OTP', 'NOT_SET')}")
+        print(f"[DEBUG] OTP GENERATED: {otp_plain}")
         logger.warning("[OTP DEBUG] phone=%s otp=%s type=%s", phone, otp_plain, request_type)
         print(f"[DEBUG] logger.warning executed for OTP")
     otp_hash = make_password(otp_plain)

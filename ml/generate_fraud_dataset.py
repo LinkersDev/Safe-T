@@ -25,6 +25,7 @@ COLUMNS = [
     "is_new_ip",
     "is_new_country",
     "failed_logins_last_30m",
+    "hour_of_day",
     "label",
 ]
 
@@ -69,6 +70,12 @@ def generate_rows(n_rows: int, seed: int) -> pd.DataFrame:
         rng.binomial(1, 0.935, size=n),
     )
     failed = rng.poisson(0.11, size=n)
+    
+    # Hour of day: weighted toward business hours (9-17)
+    business_hours = rng.choice(range(9, 18), size=int(n * 0.75))
+    other_hours = rng.choice(range(0, 24), size=n - int(n * 0.75))
+    hour = np.concatenate([business_hours, other_hours])
+    rng.shuffle(hour)
 
     df_n = pd.DataFrame(
         {
@@ -81,6 +88,7 @@ def generate_rows(n_rows: int, seed: int) -> pd.DataFrame:
             "is_new_ip": new_ip,
             "is_new_country": new_country,
             "failed_logins_last_30m": failed,
+            "hour_of_day": hour,
             "label": np.zeros(n, dtype=np.int8),
         }
     )
@@ -105,6 +113,13 @@ def generate_rows(n_rows: int, seed: int) -> pd.DataFrame:
     new_country = rng.binomial(1, 0.085, size=n)
     trusted = np.where(new_dev > 0, rng.binomial(1, 0.11, size=n), rng.binomial(1, 0.58, size=n))
     failed = rng.poisson(1.05, size=n)
+    
+    # Hour of day: mix of normal and late hours
+    normal_hours = rng.choice(range(9, 18), size=int(n * 0.5))
+    late_hours = rng.choice(list(range(22, 24)) + list(range(0, 6)), size=int(n * 0.3))
+    other_hours = rng.choice(range(0, 24), size=n - int(n * 0.5) - int(n * 0.3))
+    hour = np.concatenate([normal_hours, late_hours, other_hours])
+    rng.shuffle(hour)
 
     z = (
         1.15 * (ratio - 1.45)
@@ -130,6 +145,7 @@ def generate_rows(n_rows: int, seed: int) -> pd.DataFrame:
             "is_new_ip": new_ip,
             "is_new_country": new_country,
             "failed_logins_last_30m": failed,
+            "hour_of_day": hour,
             "label": label_s,
         }
     )
@@ -151,6 +167,12 @@ def generate_rows(n_rows: int, seed: int) -> pd.DataFrame:
     new_country = rng.binomial(1, 0.76, size=n)
     trusted = np.zeros(n, dtype=np.int8)
     failed = rng.poisson(4.2, size=n)
+    
+    # Hour of day: heavily weighted toward late night (22-5)
+    late_night = rng.choice(list(range(22, 24)) + list(range(0, 6)), size=int(n * 0.8))
+    other_hours = rng.choice(range(0, 24), size=n - int(n * 0.8))
+    hour = np.concatenate([late_night, other_hours])
+    rng.shuffle(hour)
 
     df_f = pd.DataFrame(
         {
@@ -163,6 +185,7 @@ def generate_rows(n_rows: int, seed: int) -> pd.DataFrame:
             "is_new_ip": new_ip,
             "is_new_country": new_country,
             "failed_logins_last_30m": failed,
+            "hour_of_day": hour,
             "label": np.ones(n, dtype=np.int8),
         }
     )
@@ -179,6 +202,7 @@ def generate_rows(n_rows: int, seed: int) -> pd.DataFrame:
     for c in ("tx_count_last_1h", "tx_count_last_24h"):
         df[c] = df[c].clip(lower=0).astype(np.int64)
     df["failed_logins_last_30m"] = df["failed_logins_last_30m"].clip(lower=0, upper=15).astype(np.int64)
+    df["hour_of_day"] = df["hour_of_day"].clip(lower=0, upper=23).astype(np.int8)
     for c in ("is_new_device", "is_trusted_device", "is_new_ip", "is_new_country", "label"):
         df[c] = df[c].astype(np.int8)
 

@@ -24,6 +24,8 @@ export type Transaction = {
   createdAt: string
   /** e.g. "To: Jane Doe" / "From: Branch teller name" */
   counterpartyDisplay?: string
+  /** 'incoming' = money received by user, 'outgoing' = money sent by user */
+  direction?: 'incoming' | 'outgoing'
 }
 
 export type LedgerListResponse = Transaction[]

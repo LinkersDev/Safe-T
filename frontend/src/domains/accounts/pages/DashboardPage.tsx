@@ -158,31 +158,31 @@ export function DashboardPage() {
         ) : transactions?.length ? (
           <div className="space-y-3">
             {transactions.map((tx) => {
-              const isCredit = tx.type === 'DEPOSIT'
+              const isIncoming = tx.direction === 'incoming'
               return (
                 <div
                   key={tx.id}
                   className={`
                     card-hover flex items-center justify-between rounded-xl border border-[#E2E8F0] bg-white p-4 relative overflow-hidden
-                    ${isCredit ? 'border-l-emerald-500' : 'border-l-rose-500'}
+                    ${isIncoming ? 'border-l-emerald-500' : 'border-l-rose-500'}
                   `}
-                  style={{ 
+                  style={{
                     boxShadow: '0 4px 20px rgba(10, 37, 64, 0.08)',
                     borderLeftWidth: '3px',
                     transition: 'all 0.2s ease',
                   }}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${isCredit ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                      {isCredit ? <ArrowDownLeft size={18} strokeWidth={2} /> : <ArrowUpRight size={18} strokeWidth={2} />}
+                    <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${isIncoming ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                      {isIncoming ? <ArrowDownLeft size={18} strokeWidth={2} /> : <ArrowUpRight size={18} strokeWidth={2} />}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-slate-900 truncate max-w-40">{tx.description}</p>
+                      <p className="text-sm font-medium text-slate-900 truncate max-w-40">{tx.counterpartyDisplay || tx.description}</p>
                       <p className="text-xs text-slate-500">{new Date(tx.createdAt).toLocaleDateString()}</p>
                     </div>
                   </div>
-                  <span className={`text-sm font-bold ${isCredit ? 'text-emerald-600' : 'text-slate-900'}`}>
-                    {isCredit ? '+' : '-'}{tx.currency} {tx.amount.toLocaleString()}
+                  <span className={`text-sm font-bold ${isIncoming ? 'text-emerald-600' : 'text-slate-900'}`}>
+                    {isIncoming ? '+' : '-'}{tx.currency} {tx.amount.toLocaleString()}
                   </span>
                 </div>
               )

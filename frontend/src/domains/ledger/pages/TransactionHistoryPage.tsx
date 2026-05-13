@@ -66,10 +66,10 @@ export function TransactionHistoryPage() {
       key: 'amount',
       header: 'Amount',
       render: (tx) => {
-        const isCredit = tx.type === 'DEPOSIT'
+        const isIncoming = tx.direction === 'incoming'
         return (
-          <span className={cn('font-bold text-sm', isCredit ? 'text-emerald-600' : 'text-text-primary')}>
-            {isCredit ? '+' : '-'}{tx.currency} {Number(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          <span className={cn('font-bold text-sm', isIncoming ? 'text-emerald-600' : 'text-text-primary')}>
+            {isIncoming ? '+' : '-'}{tx.currency} {Number(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </span>
         )
       },

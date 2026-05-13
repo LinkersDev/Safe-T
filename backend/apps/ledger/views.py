@@ -67,7 +67,7 @@ def transaction_list(request):
         limit=limit,
         offset=offset,
     )
-    serializer = TransactionListSerializer(transactions, many=True)
+    serializer = TransactionListSerializer(transactions, many=True, context={'request': request})
     return Response(serializer.data)
 
 
@@ -76,10 +76,16 @@ def transaction_list(request):
 def transaction_detail(request, reference_number):
     """Retrieve a single transaction with all entries."""
     transaction = get_transaction_by_reference(reference_number)
-    if transaction is None or transaction.customer != request.user:
+    if transaction is None:
         return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
-    serializer = TransactionSerializer(transaction)
+    # Allow sender (customer) OR receiver (has an account entry in the transaction)
+    user_account_ids = set(request.user.accounts.values_list('pk', flat=True))
+    has_entry = any(e.account_id in user_account_ids for e in transaction.entries.all())
+    if transaction.customer != request.user and not has_entry:
+        return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = TransactionSerializer(transaction, context={'request': request})
     return Response(serializer.data)
 
 

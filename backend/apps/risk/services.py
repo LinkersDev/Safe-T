@@ -92,35 +92,65 @@ def _execute_action(alert: FraudAlert, action: str, actor=None) -> str:
 
 def score_transaction(tx_pk: int) -> FraudAlert | None:
     """
-    Score a committed transaction for fraud signals.
+    Score a committed transaction for fraud signals using hybrid ML + rules.
 
     Called via db_transaction.on_commit() from post_transaction().
     Swallows ALL exceptions — must not affect response time or atomicity.
 
     Workflow:
-      1. Run rule engine → (score, reasons, source_account_pk)
-      2. Update Transaction.risk_score
-      3. If score < MEDIUM threshold → return None (low-risk, no alert)
-      4. Create FraudAlert
-      5. If severity == CRITICAL → auto-freeze source account
+      1. Run rule engine → (rule_score, reasons, source_account_pk)
+      2. Run ML prediction → ml_probability
+      3. Combine scores → combined_score
+      4. Update Transaction.risk_score with combined score
+      5. If combined_score < MEDIUM threshold → return None (low-risk, no alert)
+      6. Create FraudAlert with all scores
+      7. If severity == CRITICAL AND rule_score >= 50 → auto-freeze source account
     """
     try:
-        score, reasons, source_account_pk = compute_transaction_score(tx_pk)
+        # 1. Get rule-based score (existing)
+        rule_score, reasons, source_account_pk = compute_transaction_score(tx_pk)
 
-        # Always update risk_score on the transaction (even for LOW)
+        # 2. Get ML prediction
+        ml_probability = None
+        try:
+            from .ml.feature_builder import extract_transaction_features
+            from .ml.predictor import predict_transaction_fraud
+
+            features = extract_transaction_features(tx_pk)
+            ml_probability = predict_transaction_fraud(features)
+        except Exception as e:
+            logger.warning(f"ML prediction failed for tx {tx_pk}: {e}")
+
+        # 3. Combine scores (ML 60%, rules 40%)
+        if ml_probability is not None:
+            combined_score = int((rule_score * 0.4) + (ml_probability * 100 * 0.6))
+        else:
+            combined_score = rule_score  # fallback to rules only
+
+        # Log scores for monitoring
+        logger.info(
+            f"Fraud scoring | tx={tx_pk} rule_score={rule_score} "
+            f"ml_probability={ml_probability} combined_score={combined_score}"
+        )
+
+        # 4. Always update risk_score on the transaction (even for LOW)
         from apps.ledger.models import Transaction
-        Transaction.objects.filter(pk=tx_pk).update(risk_score=score)
+        Transaction.objects.filter(pk=tx_pk).update(risk_score=combined_score)
 
-        severity = AlertSeverity.for_score(score)
+        # 5. Determine severity from combined score
+        severity = AlertSeverity.for_score(combined_score)
         if severity == AlertSeverity.LOW:
             return None
 
-        # Create the alert
+        # 6. Create alert with all scores
         alert = FraudAlert.objects.create(
             alert_type=AlertType.TRANSACTION,
             severity=severity,
             status=AlertStatus.OPEN,
-            risk_score=score,
+            risk_score=combined_score,
+            ml_fraud_probability=ml_probability,
+            rule_based_score=rule_score,
+            combined_score=combined_score,
             account_id=source_account_pk,
             transaction_id=tx_pk,
             rules_triggered=reasons,
@@ -135,24 +165,27 @@ def score_transaction(tx_pk: int) -> FraudAlert | None:
         except Exception:
             pass
 
-        # CRITICAL → auto-freeze source account
-        if severity == AlertSeverity.CRITICAL and source_account_pk:
+        # 7. CRITICAL auto-freeze - RULE ENGINE HAS FINAL AUTHORITY
+        # Only freeze if BOTH combined score AND rule score are high
+        if severity == AlertSeverity.CRITICAL and rule_score >= 50 and source_account_pk:
             taken = _execute_action(alert, DecisionAction.FREEZE_ACCOUNT)
             if taken:
                 alert.auto_action_taken = taken
                 alert.status = AlertStatus.ACTIONED
                 alert.save(update_fields=["auto_action_taken", "status", "updated_at"])
+                logger.warning(
+                    f"Account auto-frozen | tx={tx_pk} combined_score={combined_score} "
+                    f"rule_score={rule_score} ml_probability={ml_probability}"
+                )
 
         logger.info(
-            "FraudAlert created | alert=%s type=TRANSACTION tx=%s score=%s severity=%s",
-            alert.pk, tx_pk, score, severity,
+            f"FraudAlert created | alert={alert.pk} type=TRANSACTION tx={tx_pk} "
+            f"score={combined_score} severity={severity}"
         )
         return alert
 
     except Exception as exc:
-        logger.error(
-            "score_transaction failed | tx_pk=%s error=%s", tx_pk, exc, exc_info=True
-        )
+        logger.error(f"score_transaction failed | tx_pk={tx_pk} error={exc}", exc_info=True)
         return None
 
 

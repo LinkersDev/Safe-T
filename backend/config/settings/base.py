@@ -13,11 +13,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent  # backend/
 env = environ.Env(
     DEBUG=(bool, False),
     ENABLE_DEV_OTP=(bool, False),
-    ACCESS_TOKEN_LIFETIME_MINUTES=(int, 15),
-    REFRESH_TOKEN_LIFETIME_DAYS=(int, 7),
+    ACCESS_TOKEN_LIFETIME_MINUTES=(int, 60),
+    REFRESH_TOKEN_LIFETIME_DAYS=(int, 30),
     LEDGER_FEE_POOL_ACCOUNT_NUMBER=(str, ""),
     # Default matches demo seed; override in production via env.
     LEDGER_CASH_ACCOUNT_NUMBER=(str, "9999000000000002"),
+    # OTP provider (dev | whatsapp)
+    OTP_PROVIDER=(str, "dev"),
+    # TNEENWH WhatsApp API credentials
+    TNEENWH_BASE_URL=(str, "https://api.tneenwh.com"),
+    TNEENWH_API_KEY=(str, ""),
+    TNEENWH_SESSION_ID=(str, ""),
+    TNEENWH_CHANNEL_SECRET=(str, ""),
+    TNEENWH_EMAIL=(str, ""),
+    TNEENWH_PASSWORD=(str, ""),
+    TNEENWH_HTTP_USER_AGENT=(str, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"),
 )
 environ.Env.read_env(BASE_DIR / ".env")
 
@@ -27,6 +37,14 @@ environ.Env.read_env(BASE_DIR / ".env")
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
 ENABLE_DEV_OTP = env("ENABLE_DEV_OTP")
+OTP_PROVIDER = env("OTP_PROVIDER")
+TNEENWH_BASE_URL = env("TNEENWH_BASE_URL").rstrip("/")
+TNEENWH_API_KEY = env("TNEENWH_API_KEY")
+TNEENWH_SESSION_ID = env("TNEENWH_SESSION_ID")
+TNEENWH_CHANNEL_SECRET = env("TNEENWH_CHANNEL_SECRET")
+TNEENWH_EMAIL = env("TNEENWH_EMAIL")
+TNEENWH_PASSWORD = env("TNEENWH_PASSWORD")
+TNEENWH_HTTP_USER_AGENT = env("TNEENWH_HTTP_USER_AGENT")
 ALLOWED_HOSTS: list[str] = []
 
 # ---------------------------------------------------------------------------

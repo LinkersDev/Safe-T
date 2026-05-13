@@ -57,10 +57,23 @@ export type BackendAlert = {
   severity: string
   status: string
   risk_score: string
+  ml_fraud_probability: number | null
+  rule_based_score: number | null
+  combined_score: number | null
   user_name: string | null
+  user_phone: string | null
   account_number: string | null
   tx_reference: string | null
+  transaction_type: string | null
+  transaction_amount: string | null
+  transaction_currency: string | null
+  login_device_id: string | null
+  login_ip_address: string | null
+  login_location: string | null
+  rules_triggered: string[]
+  auto_action_taken: string
   created_at: string
+  updated_at: string
 }
 
 export type BackendKycDocument = {
@@ -189,10 +202,23 @@ export function mapRiskAlert(alert: BackendAlert): FraudAlert {
     severity: alert.severity,
     status: alert.status,
     riskScore: alert.risk_score,
+    mlFraudProbability: alert.ml_fraud_probability,
+    ruleBasedScore: alert.rule_based_score,
+    combinedScore: alert.combined_score,
     userName: alert.user_name,
+    userPhone: alert.user_phone,
     accountNumber: alert.account_number,
     txReference: alert.tx_reference,
+    transactionType: alert.transaction_type,
+    transactionAmount: alert.transaction_amount,
+    transactionCurrency: alert.transaction_currency,
+    loginDeviceId: alert.login_device_id,
+    loginIpAddress: alert.login_ip_address,
+    loginLocation: alert.login_location,
+    rulesTriggered: alert.rules_triggered ?? [],
+    autoActionTaken: alert.auto_action_taken ?? '',
     createdAt: alert.created_at,
+    updatedAt: alert.updated_at,
   }
 }
 

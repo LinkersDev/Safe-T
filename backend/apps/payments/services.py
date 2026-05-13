@@ -19,7 +19,7 @@ from apps.accounts.selectors import assert_account_can_debit
 from apps.ledger.constants import TransactionChannel, TransactionType
 from apps.ledger.services import post_transaction
 from apps.security.constants import OTPRequestType
-from apps.security.services import create_otp
+from apps.security.otp.factory import get_otp_service
 from apps.users.constants import UserStatus
 
 from .constants import QR_TOKEN_TTL_HOURS, QRAmountMode, QRPaymentStatus
@@ -47,9 +47,9 @@ def send_transfer_otp(
     user,
     ip: str = "",
     device_id: str = "",
-) -> str:
+) -> str | None:
     """Issue an OTP for a pending transfer. Returns plaintext OTP (never persisted)."""
-    _, otp_plain = create_otp(
+    result = get_otp_service().generate_otp(
         phone=user.phone_number,
         request_type=OTPRequestType.TRANSFER,
         purpose_ref="TRANSFER",
@@ -57,7 +57,7 @@ def send_transfer_otp(
         device_id=device_id,
         user=user,
     )
-    return otp_plain
+    return result.otp_plain
 
 
 def create_transfer(
@@ -159,9 +159,9 @@ def send_qr_payment_otp(
     qr_token: str,
     ip: str = "",
     device_id: str = "",
-) -> str:
+) -> str | None:
     """Issue an OTP scoped to a specific QR payment (token used as purpose_ref). Returns plaintext OTP."""
-    _, otp_plain = create_otp(
+    result = get_otp_service().generate_otp(
         phone=user.phone_number,
         request_type=OTPRequestType.QR_PAYMENT,
         purpose_ref=qr_token,
@@ -169,7 +169,7 @@ def send_qr_payment_otp(
         device_id=device_id,
         user=user,
     )
-    return otp_plain
+    return result.otp_plain
 
 
 def process_qr_payment(
@@ -265,10 +265,10 @@ def send_bill_payment_otp(
     service_number: str,
     ip: str = "",
     device_id: str = "",
-) -> str:
+) -> str | None:
     """Issue an OTP scoped to a specific bill (provider+service used as purpose_ref). Returns plaintext OTP."""
     purpose_ref = f"{provider_code}:{service_number}"
-    _, otp_plain = create_otp(
+    result = get_otp_service().generate_otp(
         phone=user.phone_number,
         request_type=OTPRequestType.BILL_PAYMENT,
         purpose_ref=purpose_ref,
@@ -276,7 +276,7 @@ def send_bill_payment_otp(
         device_id=device_id,
         user=user,
     )
-    return otp_plain
+    return result.otp_plain
 
 
 def fetch_bill_info(

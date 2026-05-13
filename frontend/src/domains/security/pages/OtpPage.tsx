@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { MobileScreenLayout } from '../../../shared/layouts/MobileScreenLayout'
@@ -10,7 +10,7 @@ import { Input } from '../../../shared/components/ui/Input'
 import { ROUTE_PATHS } from '../../../app/routing/paths'
 import { normalizeApiError } from '../../../core/api/error-normalizer'
 import { startMockSession, startSession } from '../hooks/useAuthSession'
-import { isAuthMockMode, loginWithOtp } from '../services/auth-service'
+import { isAuthMockMode, loginWithOtp, sendLoginOtp, sendFirstLoginOtp } from '../services/auth-service'
 import type { LoginResponse, MockAuthLoginResponse } from '../types'
 
 export function OtpPage() {
@@ -27,6 +27,61 @@ export function OtpPage() {
     | null
   const [otpCode, setOtpCode] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [timer, setTimer] = useState(30)
+  const [canResend, setCanResend] = useState(false)
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (timer <= 0) {
+      setCanResend(true)
+      return
+    }
+    const interval = setInterval(() => {
+      setTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          setCanResend(true)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [timer])
+
+  const resetTimer = useCallback(() => {
+    setTimer(30)
+    setCanResend(false)
+    setError(null)
+  }, [])
+
+  const resendMutation = useMutation({
+    mutationFn: async () => {
+      if (state?.firstLogin) {
+        const response = await sendFirstLoginOtp(phoneNumber)
+        return response
+      }
+      const response = await sendLoginOtp(phoneNumber)
+      return response
+    },
+    onSuccess: (response) => {
+      resetTimer()
+      // Update debug OTP if available
+      if (response.dev_otp || response._debug_otp) {
+        navigate(location.pathname, {
+          replace: true,
+          state: {
+            ...state,
+            debugOtp: response.dev_otp ?? response._debug_otp,
+          },
+        })
+      }
+    },
+    onError: (nextError) => {
+      const normalized = normalizeApiError(nextError)
+      setError(normalized.detail || 'Failed to resend OTP. Please try again.')
+    },
+  })
 
   const loginMutation = useMutation({
     mutationFn: async () => {
@@ -107,6 +162,23 @@ export function OtpPage() {
         <Button className="w-full" loading={loginMutation.isPending} type="submit">
           {state?.firstLogin ? 'Continue' : 'Verify OTP'}
         </Button>
+        <div className="flex items-center justify-center">
+          {canResend ? (
+            <Button
+              variant="secondary"
+              type="button"
+              loading={resendMutation.isPending}
+              onClick={() => resendMutation.mutate()}
+              className="text-sm text-text-secondary hover:text-brand-primary bg-transparent"
+            >
+              Resend OTP
+            </Button>
+          ) : (
+            <span className="text-sm text-text-tertiary">
+              Resend OTP in {timer}s
+            </span>
+          )}
+        </div>
       </Card>
     </MobileScreenLayout>
   )
