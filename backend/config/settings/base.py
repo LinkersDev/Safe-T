@@ -28,6 +28,10 @@ env = environ.Env(
     TNEENWH_EMAIL=(str, ""),
     TNEENWH_PASSWORD=(str, ""),
     TNEENWH_HTTP_USER_AGENT=(str, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"),
+    # Twilio Verify API credentials
+    TWILIO_ACCOUNT_SID=(str, ""),
+    TWILIO_AUTH_TOKEN=(str, ""),
+    TWILIO_VERIFY_SERVICE_SID=(str, ""),
 )
 environ.Env.read_env(BASE_DIR / ".env")
 
@@ -45,6 +49,9 @@ TNEENWH_CHANNEL_SECRET = env("TNEENWH_CHANNEL_SECRET")
 TNEENWH_EMAIL = env("TNEENWH_EMAIL")
 TNEENWH_PASSWORD = env("TNEENWH_PASSWORD")
 TNEENWH_HTTP_USER_AGENT = env("TNEENWH_HTTP_USER_AGENT")
+TWILIO_ACCOUNT_SID = env("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = env("TWILIO_AUTH_TOKEN")
+TWILIO_VERIFY_SERVICE_SID = env("TWILIO_VERIFY_SERVICE_SID")
 ALLOWED_HOSTS: list[str] = ["localhost", "127.0.0.1", "192.168.13.105"]
 
 # ---------------------------------------------------------------------------

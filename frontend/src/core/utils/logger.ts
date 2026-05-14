@@ -47,3 +47,6 @@ class Logger {
 export function createLogger(prefix: string): Logger {
   return new Logger(prefix);
 }
+
+// Default logger instance
+export const logger = new Logger('SafeT');

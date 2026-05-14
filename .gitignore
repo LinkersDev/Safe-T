@@ -1,16 +1,60 @@
+# Environment variables (NEVER commit credentials!)
 .env
 **/.env
+*.env.local
+*.env.production
+
+# Python
 __pycache__/
 **/__pycache__/
 *.py[cod]
 *.pyo
+*.pyd
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+*.egg-info/
+*.egg
+
+# Virtual environments
 .venv/
 venv/
 env/
+ENV/
+
+# Build artifacts
 build/
 dist/
 *.sqlite3
+*.db
+
+# IDE
 .cursor/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.capacitor/
+frontend/stats.html
+frontend/android/app/build/
+frontend/android/app/release/
+frontend/android/.gradle/
+frontend/android/build/
+frontend/ios/App/build/
+frontend/ios/App/Pods/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db

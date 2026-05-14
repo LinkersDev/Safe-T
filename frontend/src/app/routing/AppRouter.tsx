@@ -5,6 +5,7 @@ import { AuthGuard } from './guards/AuthGuard'
 import { PermissionGuard } from './guards/PermissionGuard'
 import { RoleGuard } from './guards/RoleGuard'
 import { AppShell } from '../../shared/layouts/AppShell'
+import { isMobile } from '../../core/platform/platform-detector'
 import type { RoleCode } from '../../core/state/auth-state'
 import type { ReactNode } from 'react'
 
@@ -43,6 +44,9 @@ const TellerCustomerProfilePage = lazy(() => import('../../domains/teller/pages/
 const TellerCustomerLookupPage = lazy(() => import('../../domains/teller/pages/TellerCustomerLookupPage').then(m => ({ default: m.TellerCustomerLookupPage })))
 const ForbiddenPage   = lazy(() => import('../../domains/security/pages/ForbiddenPage').then(m => ({ default: m.ForbiddenPage })))
 const NotFoundPage    = lazy(() => import('../../domains/security/pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })))
+
+// Check if we should load staff routes (deferred on mobile)
+const LOAD_STAFF_ROUTES = !isMobile()
 
 function RouteFallback() {
   return (
@@ -128,11 +132,14 @@ export function AppRouter() {
   return (
     <Suspense fallback={<RouteFallback />}>
       <Routes>
+        {/* Auth routes - always available */}
         <Route path={ROUTE_PATHS.root}                     element={<Navigate to={ROUTE_PATHS.login} replace />} />
         <Route path={ROUTE_PATHS.login}                    element={<LoginPage />} />
         <Route path={ROUTE_PATHS.otp}                      element={<OtpPage />} />
         <Route path={ROUTE_PATHS.firstLoginSetup}          element={<FirstLoginSetupPage />} />
         <Route path={ROUTE_PATHS.resetPassword}            element={<PasswordResetPage />} />
+        
+        {/* Customer routes - always available */}
         <Route path={ROUTE_PATHS.dashboard}                element={withCustomerAccess(<DashboardPage />)} />
         <Route path={ROUTE_PATHS.kyc}                      element={withCustomerAccess(<Navigate to={ROUTE_PATHS.profile} replace />)} />
         <Route path={ROUTE_PATHS.ledger}                   element={withCustomerAccess(<TransactionHistoryPage />)} />
@@ -144,22 +151,30 @@ export function AppRouter() {
         <Route path={ROUTE_PATHS.tickets}                  element={withCustomerAccess(<TicketsPage />)} />
         <Route path={ROUTE_PATHS.ticketDetailPattern}      element={withCustomerAccess(<TicketDetailPage />)} />
         <Route path={ROUTE_PATHS.notifications}            element={withCustomerAccess(<NotificationsPage />)} />
-        <Route path={ROUTE_PATHS.staff}                    element={withStaffAccess(<StaffDashboardPage />)} />
-        <Route path={ROUTE_PATHS.staffUsers}               element={withStaffAccess(<StaffUsersPage />, 'view_all_users')} />
-        <Route path={ROUTE_PATHS.staffRegisterStaff}       element={withStaffAccess(<StaffRegisterStaffPage />, 'view_all_users')} />
-        <Route path={ROUTE_PATHS.staffKyc}                 element={withStaffAccess(<StaffKycPage />, 'review_kyc')} />
-        <Route path={ROUTE_PATHS.staffAccounts}            element={withStaffAccess(<StaffAccountsPage />, 'view_all_accounts')} />
-        <Route path={ROUTE_PATHS.staffLedger}              element={withStaffAccess(<StaffLedgerPage />, 'view_all_transactions')} />
-        <Route path={ROUTE_PATHS.staffSupport}             element={withStaffAccess(<StaffSupportPage />, 'manage_support_tickets')} />
-        <Route path={ROUTE_PATHS.staffTicketDetailPattern} element={withStaffAccess(<StaffTicketDetailPage />, 'manage_support_tickets')} />
-        <Route path={ROUTE_PATHS.staffRisk}                element={withStaffAccess(<RiskAlertsPage />, 'review_fraud_alert')} />
-        <Route path={ROUTE_PATHS.staffReports}             element={withStaffAccess(<StaffReportsPage />, 'view_all_transactions')} />
-        <Route path={ROUTE_PATHS.staffTellerRegisterCustomer} element={withStaffAccess(<TellerRegisterCustomerPage />, 'staff_register_customer')} />
-        <Route path={ROUTE_PATHS.staffTellerDeposit}          element={withStaffAccess(<TellerDepositPage />, 'staff_deposit')} />
-        <Route path={ROUTE_PATHS.staffTellerWithdraw}         element={withStaffAccess(<TellerWithdrawPage />, 'staff_withdraw')} />
-        <Route path={ROUTE_PATHS.staffTellerAccountTransactions} element={withStaffAccess(<TellerAccountTransactionsPage />, 'staff_view_account_transactions')} />
-        <Route path={ROUTE_PATHS.staffTellerCustomerLookup} element={withStaffAccess(<TellerCustomerLookupPage />, 'review_kyc')} />
-        <Route path={ROUTE_PATHS.staffTellerCustomerProfilePattern} element={withStaffAccess(<TellerCustomerProfilePage />, 'review_kyc')} />
+        
+        {/* Staff routes - conditionally loaded (deferred on mobile) */}
+        {LOAD_STAFF_ROUTES && (
+          <>
+            <Route path={ROUTE_PATHS.staff}                    element={withStaffAccess(<StaffDashboardPage />)} />
+            <Route path={ROUTE_PATHS.staffUsers}               element={withStaffAccess(<StaffUsersPage />, 'view_all_users')} />
+            <Route path={ROUTE_PATHS.staffRegisterStaff}       element={withStaffAccess(<StaffRegisterStaffPage />, 'view_all_users')} />
+            <Route path={ROUTE_PATHS.staffKyc}                 element={withStaffAccess(<StaffKycPage />, 'review_kyc')} />
+            <Route path={ROUTE_PATHS.staffAccounts}            element={withStaffAccess(<StaffAccountsPage />, 'view_all_accounts')} />
+            <Route path={ROUTE_PATHS.staffLedger}              element={withStaffAccess(<StaffLedgerPage />, 'view_all_transactions')} />
+            <Route path={ROUTE_PATHS.staffSupport}             element={withStaffAccess(<StaffSupportPage />, 'manage_support_tickets')} />
+            <Route path={ROUTE_PATHS.staffTicketDetailPattern} element={withStaffAccess(<StaffTicketDetailPage />, 'manage_support_tickets')} />
+            <Route path={ROUTE_PATHS.staffRisk}                element={withStaffAccess(<RiskAlertsPage />, 'review_fraud_alert')} />
+            <Route path={ROUTE_PATHS.staffReports}             element={withStaffAccess(<StaffReportsPage />, 'view_all_transactions')} />
+            <Route path={ROUTE_PATHS.staffTellerRegisterCustomer} element={withStaffAccess(<TellerRegisterCustomerPage />, 'staff_register_customer')} />
+            <Route path={ROUTE_PATHS.staffTellerDeposit}          element={withStaffAccess(<TellerDepositPage />, 'staff_deposit')} />
+            <Route path={ROUTE_PATHS.staffTellerWithdraw}         element={withStaffAccess(<TellerWithdrawPage />, 'staff_withdraw')} />
+            <Route path={ROUTE_PATHS.staffTellerAccountTransactions} element={withStaffAccess(<TellerAccountTransactionsPage />, 'staff_view_account_transactions')} />
+            <Route path={ROUTE_PATHS.staffTellerCustomerLookup} element={withStaffAccess(<TellerCustomerLookupPage />, 'review_kyc')} />
+            <Route path={ROUTE_PATHS.staffTellerCustomerProfilePattern} element={withStaffAccess(<TellerCustomerProfilePage />, 'review_kyc')} />
+          </>
+        )}
+        
+        {/* Error routes - always available */}
         <Route path={ROUTE_PATHS.forbidden}                element={<ForbiddenPage />} />
         <Route path={ROUTE_PATHS.notFound}                 element={<NotFoundPage />} />
       </Routes>

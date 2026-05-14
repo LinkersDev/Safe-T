@@ -29,3 +29,18 @@ export function isAndroid(): boolean {
 export function isIOS(): boolean {
   return getPlatform() === 'ios';
 }
+
+/**
+ * Check if we should load staff routes.
+ * On mobile, staff routes are deferred until needed.
+ * On web, all routes are always available.
+ */
+export function shouldLoadStaffRoutes(): boolean {
+  // Always load staff routes on web
+  if (isWeb()) {
+    return true;
+  }
+  
+  // On mobile, defer staff routes (load on-demand)
+  return false;
+}
