@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:prod": "tsc -b && vite build --mode production",
     "build:mobile": "tsc -b && vite build --mode mobile && npx cap sync",
+    "build:mobile:prod": "tsc -b && vite build --mode production && npx cap sync",
     "build:analyze": "tsc -b && vite build && start dist/stats.html",
     "build:mobile:analyze": "tsc -b && vite build --mode mobile && start dist/stats.html",
     "lint": "eslint .",
@@ -14,7 +16,8 @@
     "cap:sync": "npx cap sync",
     "cap:open:android": "npx cap open android",
     "cap:run:android": "npm run build:mobile && npx cap run android",
-    "android:dev": "npm run build:mobile && npx cap run android -l --external"
+    "android:dev": "npm run build:mobile && npx cap run android -l --external",
+    "android:prod": "npm run build:mobile:prod && cd android && ./gradlew assembleRelease"
   },
   "dependencies": {
     "@capacitor/app": "^6.0.3",

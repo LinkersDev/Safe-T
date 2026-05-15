@@ -5,13 +5,15 @@ const config: CapacitorConfig = {
   appName: 'SafeT',
   webDir: 'dist',
   server: {
-    androidScheme: 'http',
-    cleartext: true, // Allow HTTP in development only
+    androidScheme: 'https',
+    cleartext: true, // Allow HTTP for localhost in development
     // SECURITY: Restrict navigation to known domains
     allowNavigation: [
       'localhost',
       '127.0.0.1',
       '192.168.13.105',
+      '*.safe-t-app.site',
+      'api.safe-t-app.site',
       '*.safet.com',
       'api.safet.com'
     ]
