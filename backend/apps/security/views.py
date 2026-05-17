@@ -146,7 +146,7 @@ def send_registration_otp(request: Request) -> Response:
     issue = otp_service.generate_otp(
         phone=phone,
         request_type=OTPRequestType.REGISTRATION,
-        ip_address=_get_client_ip(request),
+        ip=_get_client_ip(request),
         device_id=_get_device_id(request),
     )
 
@@ -249,11 +249,11 @@ def send_login_otp(request: Request) -> Response:
         issue = otp_service.generate_otp(
             phone=phone,
             request_type=OTPRequestType.LOGIN,
-            ip_address=_get_client_ip(request),
+            ip=_get_client_ip(request),
             device_id=_get_device_id(request),
             user=user,
         )
-        otp_plain = issue.get("otp")
+        otp_plain = issue.otp_plain
 
     response_data: dict = {
         "message": "If this number is registered, an OTP has been sent.",
@@ -287,11 +287,11 @@ def send_first_login_otp(request: Request) -> Response:
         issue = otp_service.generate_otp(
             phone=phone,
             request_type=OTPRequestType.FIRST_LOGIN,
-            ip_address=_get_client_ip(request),
+            ip=_get_client_ip(request),
             device_id=_get_device_id(request),
             user=user,
         )
-        otp_plain = issue.get("otp")
+        otp_plain = issue.otp_plain
 
     data: dict = {"message": "If this number is registered, an OTP has been sent.", "expires_in": 300}
     if otp_plain:
@@ -572,10 +572,10 @@ def send_password_reset_otp(request: Request) -> Response:
         issue = otp_service.generate_otp(
             phone=phone,
             request_type=OTPRequestType.PASSWORD_RESET,
-            ip_address=_get_client_ip(request),
+            ip=_get_client_ip(request),
             user=user,
         )
-        otp_plain = issue.get("otp")
+        otp_plain = issue.otp_plain
 
     response_data: dict = {
         "message": "If this number is registered and active, an OTP has been sent.",
@@ -657,10 +657,10 @@ def send_pin_reset_otp(request: Request) -> Response:
         issue = otp_service.generate_otp(
             phone=phone,
             request_type=OTPRequestType.PIN_RESET,
-            ip_address=_get_client_ip(request),
+            ip=_get_client_ip(request),
             user=user,
         )
-        otp_plain = issue.get("otp")
+        otp_plain = issue.otp_plain
 
     response_data: dict = {
         "message": "If this number is registered and active, an OTP has been sent.",
