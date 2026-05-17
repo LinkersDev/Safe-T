@@ -247,12 +247,17 @@ LEDGER_CASH_ACCOUNT_NUMBER = env("LEDGER_CASH_ACCOUNT_NUMBER")
 SKIP_OTP_IN_DEV = env.bool("SKIP_OTP_IN_DEV", default=False)
 
 CORS_ALLOWED_ORIGINS = [
+    # Production
+    "https://safe-t-app.site",
+    "https://www.safe-t-app.site",
+    # Local dev
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:3000",
     "https://localhost",
     "http://127.0.0.1:3000",
     "http://192.168.13.105:3000",
+    # Mobile (Capacitor / Ionic WebView)
     "capacitor://localhost",
     "ionic://localhost",
     "http://localhost",
