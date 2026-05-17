@@ -1,217 +1,242 @@
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
+from typing import TYPE_CHECKING
 
 from django.conf import settings
-from django.utils import timezone
 
-from apps.security.otp.clients.twilio_verify_client import (
-    TwilioVerifyClient,
-    TwilioVerifyError,
-)
-from apps.security.otp.interfaces import OTPIssueResult
-from apps.security.otp.policy import should_expose_dev_otp
-from apps.security.constants import OTPStatus
 from apps.security.models import OTPRequest
-from apps.security.services import create_otp, verify_otp
-from apps.security.exceptions import (
-    OTPInvalidError,
-    OTPNotFoundError,
-)
+from apps.security.otp.clients.twilio_verify_client import TwilioVerifyClient, TwilioVerifyError
+from apps.security.otp.services import create_otp, verify_otp
+from apps.security.otp.policy import should_expose_dev_otp
+
+if TYPE_CHECKING:
+    from apps.users.models import User
 
 logger = logging.getLogger(__name__)
 
 
 class TwilioVerifyOTPService:
     """
-    Production OTP service using Twilio Verify managed OTP.
+    OTP service using Twilio Verify API.
     
-    IMPORTANT DIFFERENCES FROM OTHER PROVIDERS:
-    * Does NOT use create_otp() - Twilio generates the OTP
-    * Does NOT use verify_otp() - Twilio verifies the OTP
-    * Creates stub OTPRequest records for audit trail only
-    * No phone number purchase required (trial-compatible)
-    
-    Twilio Verify handles:
-    - OTP generation (6-digit code)
-    - OTP storage (on Twilio's servers)
-    - SMS delivery
-    - OTP verification
-    - Expiration (10 minutes default)
+    Features:
+    - Managed OTP generation and delivery via Twilio Verify
+    - Fallback to local OTP generation in dev mode if Twilio fails
+    - Creates stub OTPRequest records for audit trail
+    - Exposes OTP in dev mode only when using local fallback
     """
     
-    def __init__(self, client: TwilioVerifyClient | None = None):
-        if client is None:
-            client = TwilioVerifyClient(
-                account_sid=settings.TWILIO_ACCOUNT_SID,
-                auth_token=settings.TWILIO_AUTH_TOKEN,
-                service_sid=settings.TWILIO_VERIFY_SERVICE_SID,
-            )
-        self._client = client
+    def __init__(self):
+        self._client = TwilioVerifyClient(
+            account_sid=settings.TWILIO_ACCOUNT_SID,
+            auth_token=settings.TWILIO_AUTH_TOKEN,
+            service_sid=settings.TWILIO_VERIFY_SERVICE_SID,
+        )
     
     def generate_otp(
         self,
-        *,
         phone: str,
         request_type: str,
-        purpose_ref: str = "",
-        ip: str | None = None,
-        device_id: str = "",
-        user=None,
-    ) -> OTPIssueResult:
+        user: User | None = None,
+        purpose_reference: str = "",
+        ip_address: str | None = None,
+        device_id: str | None = None,
+    ) -> dict:
         """
         Generate and send OTP via Twilio Verify.
         
-        In dev mode: Falls back to local OTP if Twilio fails.
-        In production: Requires Twilio to succeed.
+        Flow:
+        1. Generate local OTP for dev fallback
+        2. Cancel any pending OTP requests
+        3. Try to send via Twilio Verify
+        4. If Twilio fails in dev mode, use local OTP
+        5. Create OTPRequest record for audit trail
+        6. Return OTP plain text only in dev fallback scenario
+        
+        Args:
+            phone: Phone number in E.164 format
+            request_type: Type of OTP request (LOGIN, PAYMENT, etc.)
+            user: User instance if available
+            purpose_reference: Reference ID for the request
+            ip_address: IP address of the requester
+            device_id: Device ID of the requester
+            
+        Returns:
+            dict with success status and optional OTP plain text (dev mode only)
         """
+        from apps.security.models import OTPRequest
+        
         # 1. Generate local OTP first (for dev fallback)
-        otp, otp_plain = create_otp(
-            phone=phone,
+        otp_plain, otp_hash, expires_at = create_otp()
+        
+        # Log OTP in dev mode for debugging
+        if should_expose_dev_otp(request_type):
+            logger.info(f"[OTP DEBUG] phone={phone} otp={otp_plain} type={request_type}")
+        
+        # 2. Cancel any pending OTP requests for this phone/type
+        OTPRequest.objects.filter(
+            phone_number=phone,
+            purpose_reference=purpose_reference,
             request_type=request_type,
-            purpose_ref=purpose_ref,
-            ip=ip,
-            device_id=device_id,
-            user=user,
-        )
+            status='PENDING',
+        ).update(status='CANCELLED')
         
-        # 2. Dev-only terminal exposure (BEFORE sending SMS)
-        if settings.DEBUG and should_expose_dev_otp(request_type):
-            print(f"[TWILIO DEV] OTP for {phone}: {otp_plain}")
-        
-        # 3. Try to send via Twilio Verify with custom message
+        # 3. Try to send via Twilio Verify
         twilio_success = False
-        custom_message = "Welcome to SaFe-T! Your OTP code is: {{CODE}}"
         try:
             result = self._client.send_verification(
                 to=phone, 
-                channel="sms",
-                custom_message=custom_message
+                channel="sms"
             )
             twilio_success = True
+            otp_plain = None  # Don't expose OTP when Twilio succeeds
             logger.info(
-                "Twilio Verify OTP sent | phone=%s request_type=%s sid=%s",
+                "Twilio Verify SMS sent successfully | phone=%s sid=%s",
                 phone,
-                request_type,
-                result.get("sid"),
+                result.get("sid")
             )
-            if settings.DEBUG:
-                print(f"[TWILIO VERIFY] SMS sent successfully | SID: {result.get('sid')}")
-        except TwilioVerifyError as exc:
-            logger.error(
+        except TwilioVerifyError as e:
+            logger.warning(
                 "Twilio Verify OTP send failed | phone=%s request_type=%s error=%s",
                 phone,
                 request_type,
-                exc,
-                exc_info=True,
+                str(e)
             )
-            if settings.DEBUG:
-                print(f"[TWILIO VERIFY ERROR] Failed to send SMS to {phone}")
-                print(f"[TWILIO VERIFY ERROR] Error: {exc}")
-                print(f"[TWILIO VERIFY FALLBACK] Using local OTP: {otp_plain}")
-                # In dev mode, continue with local OTP
-            else:
-                # In production, fail the request
+            # In production, raise the error
+            if not settings.DEBUG:
                 raise
+            # In dev mode, continue with local OTP fallback
+            logger.info(
+                "Twilio Verify failed in dev mode | phone=%s - using local OTP fallback",
+                phone
+            )
         
-        # 4. Update OTP record with Twilio status
-        if twilio_success:
-            otp.sent_via = "TWILIO_VERIFY"
-            otp.save(update_fields=["sent_via"])
+        # 4. Create OTPRequest record for audit trail
+        sent_via = 'TWILIO_VERIFY' if twilio_success else 'SMS'
         
-        # 5. Return result - expose OTP in dev mode if Twilio failed
-        return OTPIssueResult(
-            otp_request_id=otp.pk,
-            otp_plain=otp_plain if (settings.DEBUG and should_expose_dev_otp(request_type)) else None,
+        otp_request = OTPRequest.objects.create(
+            user=user,
+            phone_number=phone,
+            request_type=request_type,
+            purpose_reference=purpose_reference,
+            otp_hash=otp_hash,
+            status='PENDING',
+            expires_at=expires_at,
+            sent_via=sent_via,
+            ip_address=ip_address,
+            device_id=device_id,
         )
+        
+        # 5. Return response
+        response = {
+            "success": True,
+            "message": "OTP sent successfully",
+        }
+        
+        # Only expose OTP in dev mode when using local fallback
+        if not twilio_success and should_expose_dev_otp(request_type) and otp_plain:
+            response["otp"] = otp_plain
+            response["dev_mode"] = True
+        
+        return response
     
     def verify_otp(
         self,
-        *,
         phone: str,
+        otp_code: str,
         request_type: str,
-        otp_plain: str,
-        purpose_ref: str = "",
-    ):
+        purpose_reference: str = "",
+    ) -> dict:
         """
-        Verify OTP via Twilio Verify or local verification.
+        Verify OTP code.
         
-        Tries Twilio first, falls back to local verification if Twilio sent_via != TWILIO_VERIFY.
+        Flow:
+        1. Find the OTP request
+        2. If sent via Twilio Verify, verify with Twilio
+        3. If Twilio verification fails in dev mode, fallback to local verification
+        4. If sent via local SMS, verify locally
+        5. Update OTP request status
+        
+        Args:
+            phone: Phone number in E.164 format
+            otp_code: OTP code to verify
+            request_type: Type of OTP request
+            purpose_reference: Reference ID for the request
+            
+        Returns:
+            dict with verification result
+            
+        Raises:
+            ValueError: If OTP is invalid or expired
         """
-        # 1. Find the pending OTP request
+        from apps.security.models import OTPRequest
+        
+        # Find the OTP request
         try:
-            otp_request = OTPRequest.objects.filter(
+            otp_request = OTPRequest.objects.get(
                 phone_number=phone,
                 request_type=request_type,
-                purpose_reference=purpose_ref,
-                status=OTPStatus.PENDING,
-            ).latest("created_at")
-        except OTPRequest.DoesNotExist:
-            logger.warning(
-                "OTP not found | phone=%s request_type=%s",
-                phone,
-                request_type,
+                purpose_reference=purpose_reference,
+                status='PENDING',
             )
-            raise OTPNotFoundError("No pending OTP request found")
+        except OTPRequest.DoesNotExist:
+            raise ValueError("No pending OTP request found")
         
-        # 2. Check if this was sent via Twilio Verify
-        if otp_request.sent_via == "TWILIO_VERIFY":
-            # Verify with Twilio
+        # Check if sent via Twilio Verify
+        if otp_request.sent_via == 'TWILIO_VERIFY':
             try:
-                result = self._client.check_verification(to=phone, code=otp_plain)
-                
-                if not result.get("valid"):
-                    # Invalid OTP
-                    otp_request.attempts_count += 1
-                    otp_request.save(update_fields=["attempts_count"])
-                    logger.warning(
-                        "Twilio Verify OTP invalid | phone=%s request_type=%s attempts=%d",
-                        phone,
-                        request_type,
-                        otp_request.attempts_count,
-                    )
-                    raise OTPInvalidError("Invalid OTP code")
-                
-                # Valid OTP
-                otp_request.status = OTPStatus.VERIFIED
-                otp_request.verified_at = timezone.now()
-                otp_request.save(update_fields=["status", "verified_at"])
-                
-                logger.info(
-                    "Twilio Verify OTP verified | phone=%s request_type=%s otp_request_id=%s",
-                    phone,
-                    request_type,
-                    otp_request.pk,
+                result = self._client.check_verification(
+                    to=phone,
+                    code=otp_code
                 )
                 
-                return otp_request
-                
-            except TwilioVerifyError as exc:
-                # Twilio error - fall back to local verification in dev mode
-                if settings.DEBUG:
-                    logger.warning(
-                        "Twilio Verify check failed, falling back to local | phone=%s error=%s",
+                if result.get("valid"):
+                    otp_request.status = 'VERIFIED'
+                    otp_request.save()
+                    logger.info(
+                        "Twilio Verify OTP verified | phone=%s request_type=%s",
                         phone,
-                        exc,
+                        request_type
                     )
-                    print(f"[TWILIO VERIFY FALLBACK] Using local verification")
-                    return verify_otp(
-                        phone=phone,
-                        request_type=request_type,
-                        otp_plain=otp_plain,
-                        purpose_ref=purpose_ref,
-                    )
+                    return {"success": True, "message": "OTP verified successfully"}
                 else:
-                    # Production - fail
                     otp_request.attempts_count += 1
-                    otp_request.save(update_fields=["attempts_count"])
-                    raise OTPInvalidError(f"OTP verification failed: {exc}")
-        else:
-            # Not sent via Twilio - use local verification
-            return verify_otp(
-                phone=phone,
-                request_type=request_type,
-                otp_plain=otp_plain,
-                purpose_ref=purpose_ref,
+                    if otp_request.attempts_count >= otp_request.max_attempts:
+                        otp_request.status = 'EXPIRED'
+                    otp_request.save()
+                    raise ValueError("Invalid OTP code")
+                    
+            except TwilioVerifyError as e:
+                logger.warning(
+                    "Twilio Verify check failed | phone=%s error=%s",
+                    phone,
+                    str(e)
+                )
+                # In production, raise the error
+                if not settings.DEBUG:
+                    raise ValueError("OTP verification failed")
+                # In dev mode, fallback to local verification
+                logger.info(
+                    "Twilio Verify check failed in dev mode | phone=%s - using local verification",
+                    phone
+                )
+        
+        # Fallback to local verification (for local OTP or dev mode fallback)
+        is_valid = verify_otp(otp_request.otp_hash, otp_code, otp_request.expires_at)
+        
+        if is_valid:
+            otp_request.status = 'VERIFIED'
+            otp_request.save()
+            logger.info(
+                "Local OTP verified | phone=%s request_type=%s",
+                phone,
+                request_type
             )
+            return {"success": True, "message": "OTP verified successfully"}
+        else:
+            otp_request.attempts_count += 1
+            if otp_request.attempts_count >= otp_request.max_attempts:
+                otp_request.status = 'EXPIRED'
+            otp_request.save()
+            raise ValueError("Invalid or expired OTP code")

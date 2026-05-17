@@ -54,7 +54,18 @@ frontend/ios/App/Pods/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+backend/nohup.out
 
 # OS
 .DS_Store
 Thumbs.db
+
+# WA-OTP-Mini — never commit node_modules or WhatsApp session
+wa-otp-mini/node_modules/
+wa-otp-mini/auth/
+
+# Backend runtime artifacts
+backend/tmp/
+backend/media/
+backend/*.backup
+backend/**/*.backup

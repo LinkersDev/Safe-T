@@ -12,7 +12,8 @@ import {
   Ban,
   MessageSquareWarning,
   TrendingUp,
-  ChevronRight
+  ChevronRight,
+  X
 } from 'lucide-react'
 import { Badge } from '../../../shared/components/ui/Badge'
 import { Skeleton } from '../../../shared/components/ui/Skeleton'
@@ -152,6 +153,133 @@ const getRelativeTime = (dateString: string) => {
 }
 
 
+// ─── Quick View Modal ────────────────────────────────────────────────────────
+
+type QuickViewModalProps = {
+  severity: 'CRITICAL' | 'HIGH'
+  alerts: RiskAlert[]
+  onClose: () => void
+  onInvestigate: (alert: RiskAlert) => void
+  onDismiss: (alert: RiskAlert) => void
+}
+
+function QuickViewModal({ severity, alerts, onClose, onInvestigate, onDismiss }: QuickViewModalProps) {
+  const isCritical = severity === 'CRITICAL'
+  const headerBg = isCritical ? 'bg-red-600' : 'bg-orange-500'
+  const badgeBg  = isCritical ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800'
+  const title    = isCritical ? 'Critical Alerts' : 'High Priority Alerts'
+  const subtitle = isCritical
+    ? 'These require immediate action — accounts may need to be frozen.'
+    : 'These require attention within 1 hour.'
+
+  return (
+    <>
+      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-x-4 top-1/2 z-50 max-h-[80vh] w-full max-w-2xl -translate-y-1/2 overflow-hidden rounded-2xl bg-white shadow-2xl sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2">
+
+        {/* Header */}
+        <div className={`${headerBg} px-6 py-4`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-white">{title}</h2>
+              <p className="mt-0.5 text-sm text-white/80">{subtitle}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="rounded-full bg-white/20 px-3 py-1 text-sm font-bold text-white">
+                {alerts.length} alert{alerts.length !== 1 ? 's' : ''}
+              </span>
+              <button onClick={onClose} className="rounded-lg p-1.5 text-white/80 hover:bg-white/20">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Alert list */}
+        <div className="max-h-[60vh] divide-y divide-gray-100 overflow-y-auto">
+          {alerts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+              <Shield className="mb-3 h-10 w-10" />
+              <p className="font-medium">No {severity.toLowerCase()} alerts</p>
+            </div>
+          ) : (
+            alerts.map((alert) => {
+              const score = (alert.combinedScore != null && alert.combinedScore > 0)
+                ? alert.combinedScore
+                : (parseFloat(alert.riskScore) || 0)
+              const typeConfig = getAlertTypeConfig(alert)
+              return (
+                <div key={alert.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50">
+                  {/* Icon */}
+                  <div className={`flex-shrink-0 rounded-lg ${typeConfig.bgColor} p-2`}>
+                    <div className={typeConfig.color}>{typeConfig.icon}</div>
+                  </div>
+
+                  {/* Info */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-gray-900">{typeConfig.label}</span>
+                      <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold ${badgeBg}`}>
+                        #{alert.id}
+                      </span>
+                      {alert.autoActionTaken && (
+                        <span className="rounded-md bg-purple-100 px-1.5 py-0.5 text-xs font-semibold text-purple-700">
+                          Auto-actioned
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 truncate text-sm text-gray-500">
+                      {alert.userName || 'Unknown'} &bull; {alert.userPhone || '—'}
+                    </p>
+                    {alert.rulesTriggered?.length > 0 && (
+                      <p className="mt-0.5 truncate text-xs text-gray-400">
+                        {alert.rulesTriggered[0]}{alert.rulesTriggered.length > 1 ? ` +${alert.rulesTriggered.length - 1} more` : ''}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Score */}
+                  <div className="flex-shrink-0 text-center">
+                    <p className={`text-2xl font-black ${isCritical ? 'text-red-600' : 'text-orange-600'}`}>{score}</p>
+                    <p className="text-xs text-gray-400">{getRelativeTime(alert.createdAt)}</p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-shrink-0 flex-col gap-1.5">
+                    <button
+                      onClick={() => onInvestigate(alert)}
+                      className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+                    >
+                      Investigate
+                    </button>
+                    {alert.status === 'OPEN' && (
+                      <button
+                        onClick={() => onDismiss(alert)}
+                        className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100"
+                      >
+                        Dismiss
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-gray-100 px-6 py-3 text-right">
+          <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-700">
+            Close
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ─── Main Page ───────────────────────────────────────────────────────────────
+
 export function RiskAlertsPage() {
   const queryClient = useQueryClient()
   const toast = useToast()
@@ -161,6 +289,7 @@ export function RiskAlertsPage() {
   } | null>(null)
   const [selectedAlert, setSelectedAlert] = useState<RiskAlert | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [quickViewSeverity, setQuickViewSeverity] = useState<'CRITICAL' | 'HIGH' | null>(null)
 
   const alertsQuery = useQuery({ queryKey: ['risk-alerts'], queryFn: getRiskAlerts })
 
@@ -180,8 +309,10 @@ export function RiskAlertsPage() {
 
   const alerts = alertsQuery.data ?? []
   const openAlerts = alerts.filter((a) => a.status === 'OPEN').length
-  const criticalCount = alerts.filter((a) => a.severity === 'CRITICAL').length
-  const highCount = alerts.filter((a) => a.severity === 'HIGH').length
+  const criticalAlerts = alerts.filter((a) => a.severity === 'CRITICAL')
+  const highAlerts = alerts.filter((a) => a.severity === 'HIGH')
+  const criticalCount = criticalAlerts.length
+  const highCount = highAlerts.length
 
   if (alertsQuery.isLoading) {
     return (
@@ -252,29 +383,37 @@ export function RiskAlertsPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-border-primary bg-surface-primary p-5">
+        <button
+          onClick={() => setQuickViewSeverity('CRITICAL')}
+          className="rounded-xl border-2 border-red-200 bg-red-50 p-5 text-left transition-all hover:border-red-400 hover:shadow-md active:scale-95"
+        >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-text-tertiary">Critical</p>
+              <p className="text-sm font-medium text-red-700">Critical</p>
               <p className="mt-1 text-3xl font-bold text-red-600">{criticalCount}</p>
+              <p className="mt-1 text-xs text-red-500">Click to review →</p>
             </div>
-            <div className="rounded-lg bg-red-50 p-3">
+            <div className="rounded-lg bg-red-100 p-3">
               <AlertOctagon className="h-6 w-6 text-red-600" />
             </div>
           </div>
-        </div>
+        </button>
 
-        <div className="rounded-xl border border-border-primary bg-surface-primary p-5">
+        <button
+          onClick={() => setQuickViewSeverity('HIGH')}
+          className="rounded-xl border-2 border-orange-200 bg-orange-50 p-5 text-left transition-all hover:border-orange-400 hover:shadow-md active:scale-95"
+        >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-text-tertiary">High Priority</p>
+              <p className="text-sm font-medium text-orange-700">High Priority</p>
               <p className="mt-1 text-3xl font-bold text-orange-600">{highCount}</p>
+              <p className="mt-1 text-xs text-orange-500">Click to review →</p>
             </div>
-            <div className="rounded-lg bg-orange-50 p-3">
+            <div className="rounded-lg bg-orange-100 p-3">
               <AlertTriangle className="h-6 w-6 text-orange-600" />
             </div>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Level 1: Clean Summary Table */}
@@ -310,7 +449,9 @@ export function RiskAlertsPage() {
               {alerts.map((alert) => {
                 const typeConfig = getAlertTypeConfig(alert)
                 const severityConfig = getSeverityConfig(alert.severity)
-                const score = alert.combinedScore ?? parseFloat(alert.riskScore) ?? 0
+                const score = (alert.combinedScore != null && alert.combinedScore > 0)
+                  ? alert.combinedScore
+                  : (parseFloat(alert.riskScore) || 0)
                 const scoreConfig = getRiskScoreLabel(score)
 
                 return (
@@ -448,6 +589,23 @@ export function RiskAlertsPage() {
           </table>
         </div>
       </div>
+
+      {/* Quick View Modal */}
+      {quickViewSeverity && (
+        <QuickViewModal
+          severity={quickViewSeverity}
+          alerts={quickViewSeverity === 'CRITICAL' ? criticalAlerts : highAlerts}
+          onClose={() => setQuickViewSeverity(null)}
+          onInvestigate={(alert) => {
+            setQuickViewSeverity(null)
+            handleAlertClick(alert)
+          }}
+          onDismiss={(alert) => {
+            setQuickViewSeverity(null)
+            setPendingAction({ alert, config: ACTIONS.find((a) => a.action === 'DISMISS')! })
+          }}
+        />
+      )}
 
       {/* Confirmation modal */}
       {pendingAction && (

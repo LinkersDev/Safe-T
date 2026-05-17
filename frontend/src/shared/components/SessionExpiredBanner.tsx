@@ -1,18 +1,24 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../app/routing/paths'
 import { subscribeSessionExpired } from '../../core/events/session-events'
 
 export function SessionExpiredBanner() {
   const [visible, setVisible] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
 
   useEffect(() => {
     const unsubscribe = subscribeSessionExpired(() => setVisible(true))
-    return () => {
-      unsubscribe()
-    }
+    return () => { unsubscribe() }
   }, [])
+
+  // Auto-dismiss once the user navigates away from the login page (successful sign-in)
+  useEffect(() => {
+    if (visible && location.pathname !== ROUTE_PATHS.login) {
+      setVisible(false)
+    }
+  }, [location.pathname, visible])
 
   if (!visible) return null
 

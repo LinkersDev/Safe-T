@@ -146,7 +146,7 @@ def send_registration_otp(request: Request) -> Response:
     issue = otp_service.generate_otp(
         phone=phone,
         request_type=OTPRequestType.REGISTRATION,
-        ip=_get_client_ip(request),
+        ip_address=_get_client_ip(request),
         device_id=_get_device_id(request),
     )
 
@@ -185,7 +185,7 @@ def complete_registration(request: Request) -> Response:
         otp_service.verify_otp(
             phone=phone,
             request_type=OTPRequestType.REGISTRATION,
-            otp_plain=data["otp_code"],
+            otp_code=data["otp_code"],
         )
     except (OTPExpiredError, OTPInvalidError, OTPMaxAttemptsExceededError, OTPNotFoundError) as exc:
         return _otp_error_response(exc)
@@ -249,11 +249,11 @@ def send_login_otp(request: Request) -> Response:
         issue = otp_service.generate_otp(
             phone=phone,
             request_type=OTPRequestType.LOGIN,
-            ip=_get_client_ip(request),
+            ip_address=_get_client_ip(request),
             device_id=_get_device_id(request),
             user=user,
         )
-        otp_plain = issue.otp_plain
+        otp_plain = issue.get("otp")
 
     response_data: dict = {
         "message": "If this number is registered, an OTP has been sent.",
@@ -287,11 +287,11 @@ def send_first_login_otp(request: Request) -> Response:
         issue = otp_service.generate_otp(
             phone=phone,
             request_type=OTPRequestType.FIRST_LOGIN,
-            ip=_get_client_ip(request),
+            ip_address=_get_client_ip(request),
             device_id=_get_device_id(request),
             user=user,
         )
-        otp_plain = issue.otp_plain
+        otp_plain = issue.get("otp")
 
     data: dict = {"message": "If this number is registered, an OTP has been sent.", "expires_in": 300}
     if otp_plain:
@@ -329,7 +329,7 @@ def complete_first_login(request: Request) -> Response:
         otp_service.verify_otp(
             phone=phone,
             request_type=OTPRequestType.FIRST_LOGIN,
-            otp_plain=data["otp_code"],
+            otp_code=data["otp_code"],
         )
     except (OTPExpiredError, OTPInvalidError, OTPMaxAttemptsExceededError, OTPNotFoundError) as exc:
         return _otp_error_response(exc)
@@ -504,7 +504,7 @@ def login_view(request: Request) -> Response:
             otp_service.verify_otp(
                 phone=phone,
                 request_type=OTPRequestType.LOGIN,
-                otp_plain=otp_code,
+                otp_code=otp_code,
             )
         except (OTPExpiredError, OTPInvalidError, OTPMaxAttemptsExceededError, OTPNotFoundError) as exc:
             return _otp_error_response(exc)
@@ -572,10 +572,10 @@ def send_password_reset_otp(request: Request) -> Response:
         issue = otp_service.generate_otp(
             phone=phone,
             request_type=OTPRequestType.PASSWORD_RESET,
-            ip=_get_client_ip(request),
+            ip_address=_get_client_ip(request),
             user=user,
         )
-        otp_plain = issue.otp_plain
+        otp_plain = issue.get("otp")
 
     response_data: dict = {
         "message": "If this number is registered and active, an OTP has been sent.",
@@ -611,7 +611,7 @@ def confirm_password_reset(request: Request) -> Response:
         otp_request = otp_service.verify_otp(
             phone=phone,
             request_type=OTPRequestType.PASSWORD_RESET,
-            otp_plain=data["otp_code"],
+            otp_code=data["otp_code"],
         )
     except (OTPExpiredError, OTPInvalidError, OTPMaxAttemptsExceededError, OTPNotFoundError) as exc:
         return _otp_error_response(exc)
@@ -623,7 +623,7 @@ def confirm_password_reset(request: Request) -> Response:
         user=user,
         reset_type=ResetType.PASSWORD,
         otp_request=otp_request,
-        ip=ip,
+        ip_address=ip,
         success=True,
     )
     return Response(
@@ -657,10 +657,10 @@ def send_pin_reset_otp(request: Request) -> Response:
         issue = otp_service.generate_otp(
             phone=phone,
             request_type=OTPRequestType.PIN_RESET,
-            ip=_get_client_ip(request),
+            ip_address=_get_client_ip(request),
             user=user,
         )
-        otp_plain = issue.otp_plain
+        otp_plain = issue.get("otp")
 
     response_data: dict = {
         "message": "If this number is registered and active, an OTP has been sent.",
@@ -696,7 +696,7 @@ def confirm_pin_reset(request: Request) -> Response:
         otp_request = otp_service.verify_otp(
             phone=phone,
             request_type=OTPRequestType.PIN_RESET,
-            otp_plain=data["otp_code"],
+            otp_code=data["otp_code"],
         )
     except (OTPExpiredError, OTPInvalidError, OTPMaxAttemptsExceededError, OTPNotFoundError) as exc:
         return _otp_error_response(exc)
@@ -708,7 +708,7 @@ def confirm_pin_reset(request: Request) -> Response:
         user=user,
         reset_type=ResetType.PIN,
         otp_request=otp_request,
-        ip=ip,
+        ip_address=ip,
         success=True,
     )
     return Response(

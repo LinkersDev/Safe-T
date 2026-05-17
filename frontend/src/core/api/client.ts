@@ -5,7 +5,9 @@ import { getDeviceIdentity } from '../platform/device'
 import { clearSessionState } from '../state/auth-state'
 import { emitSessionExpired } from '../events/session-events'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.DEV
+  ? 'http://localhost:8000'
+  : (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000')
 
 type PendingRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean }
 
@@ -66,7 +68,9 @@ apiClient.interceptors.response.use(
     const status = error.response?.status
     const requestConfig = error.config as PendingRequestConfig | undefined
 
-    if (status !== 401 || !requestConfig || requestConfig._retry) {
+    const requestUrl = requestConfig.url ?? ''
+    const isAuthEndpoint = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/token')
+    if (status !== 401 || !requestConfig || requestConfig._retry || isAuthEndpoint) {
       return Promise.reject(error)
     }
 

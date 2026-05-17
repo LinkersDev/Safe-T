@@ -32,6 +32,8 @@ env = environ.Env(
     TWILIO_ACCOUNT_SID=(str, ""),
     TWILIO_AUTH_TOKEN=(str, ""),
     TWILIO_VERIFY_SERVICE_SID=(str, ""),
+    # wa-otp-mini WhatsApp bot (required when OTP_PROVIDER=wa_otp_mini)
+    WA_OTP_MINI_URL=(str, "http://127.0.0.1:3001"),
 )
 environ.Env.read_env(BASE_DIR / ".env")
 
@@ -52,6 +54,7 @@ TNEENWH_HTTP_USER_AGENT = env("TNEENWH_HTTP_USER_AGENT")
 TWILIO_ACCOUNT_SID = env("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = env("TWILIO_AUTH_TOKEN")
 TWILIO_VERIFY_SERVICE_SID = env("TWILIO_VERIFY_SERVICE_SID")
+WA_OTP_MINI_URL = env("WA_OTP_MINI_URL")
 ALLOWED_HOSTS: list[str] = ["localhost", "127.0.0.1", "192.168.13.105"]
 
 # ---------------------------------------------------------------------------
@@ -247,6 +250,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:3000",
+    "https://localhost",
     "http://127.0.0.1:3000",
     "http://192.168.13.105:3000",
     "capacitor://localhost",

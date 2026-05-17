@@ -30,14 +30,13 @@ class TwilioVerifyClient:
         self.client = Client(account_sid, auth_token)
         self.verify = self.client.verify.v2.services(service_sid)
     
-    def send_verification(self, to: str, channel: str = "sms", custom_message: str | None = None) -> dict:
+    def send_verification(self, to: str, channel: str = "sms") -> dict:
         """
         Start verification (sends OTP via SMS).
         
         Args:
             to: Phone number in E.164 format (e.g., +251912345678)
             channel: Delivery channel ('sms' or 'call')
-            custom_message: Optional custom message template (use {{CODE}} for OTP placeholder)
             
         Returns:
             dict with verification SID and status
@@ -46,16 +45,10 @@ class TwilioVerifyClient:
             TwilioVerifyError: If sending fails
         """
         try:
-            params = {
-                "to": to,
-                "channel": channel
-            }
-            
-            # Add custom message if provided
-            if custom_message:
-                params["custom_message"] = custom_message
-            
-            verification = self.verify.verifications.create(**params)
+            verification = self.verify.verifications.create(
+                to=to,
+                channel=channel
+            )
             logger.info(
                 "Twilio Verify OTP sent | to=%s sid=%s status=%s channel=%s",
                 to,

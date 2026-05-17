@@ -46,6 +46,10 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    strictPort: false
+    strictPort: false,
+    proxy: {
+      '/api': 'http://localhost:8000',
+      '/media': 'http://localhost:8000',
+    },
   }
 })

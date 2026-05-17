@@ -224,6 +224,8 @@ def score_login(login_log_pk: int) -> FraudAlert | None:
             severity=severity,
             status=AlertStatus.OPEN,
             risk_score=score,
+            rule_based_score=score,
+            combined_score=score,
             user=log.user,
             login_log_id=login_log_pk,
             rules_triggered=reasons,

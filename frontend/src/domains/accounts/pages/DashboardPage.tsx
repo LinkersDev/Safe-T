@@ -34,6 +34,7 @@ const iconColors: Record<string, string> = {
 export function DashboardPage() {
   const { user } = useAuthSession()
   const [showAccountNumber, setShowAccountNumber] = useState(false)
+  const [showBalance, setShowBalance] = useState(false)
   const { data: accounts, isLoading: accountsLoading } = useQuery({ queryKey: ['accounts'], queryFn: getAccounts })
   const { data: transactions, isLoading: txLoading } = useQuery({ queryKey: ['ledger', 5], queryFn: () => getLedger({ limit: 5 }) })
 
@@ -57,9 +58,23 @@ export function DashboardPage() {
           className="rounded-2xl p-6 text-white relative overflow-hidden"
           style={{ backgroundColor: '#0A2540', boxShadow: '0 4px 20px rgba(10, 37, 64, 0.15)' }}
         >
-          <p className="text-sm font-medium text-slate-400">Available Balance</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium text-slate-400">Available Balance</p>
+            <button
+              type="button"
+              onClick={() => setShowBalance((v) => !v)}
+              className="rounded-md p-1 text-slate-400 hover:text-white transition-all"
+              style={{ transition: 'all 0.2s ease' }}
+              aria-label={showBalance ? 'Hide balance' : 'Show balance'}
+            >
+              {showBalance ? <EyeOff size={14} strokeWidth={2} /> : <Eye size={14} strokeWidth={2} />}
+            </button>
+          </div>
           <p className="mt-2 text-4xl font-bold tracking-tight">
-            {primaryAccount.currency} {primaryAccount.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            {showBalance
+              ? `${primaryAccount.currency} ${primaryAccount.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+              : `${primaryAccount.currency} ••••••`
+            }
           </p>
           <div className="mt-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -106,7 +121,7 @@ export function DashboardPage() {
                 <div>
                   <p className="text-xs text-slate-500">{acc.label}</p>
                   <p className="text-lg font-bold text-slate-900 mt-0.5">
-                    {acc.currency} {acc.balance.toLocaleString()}
+                    {showBalance ? `${acc.currency} ${acc.balance.toLocaleString()}` : `${acc.currency} ••••••`}
                   </p>
                 </div>
                 <Badge variant={acc.status === 'ACTIVE' ? 'success' : 'danger'}>{acc.status}</Badge>
