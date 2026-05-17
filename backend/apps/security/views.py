@@ -185,7 +185,7 @@ def complete_registration(request: Request) -> Response:
         otp_service.verify_otp(
             phone=phone,
             request_type=OTPRequestType.REGISTRATION,
-            otp_code=data["otp_code"],
+            otp_plain=data["otp_code"],
         )
     except (OTPExpiredError, OTPInvalidError, OTPMaxAttemptsExceededError, OTPNotFoundError) as exc:
         return _otp_error_response(exc)
@@ -329,7 +329,7 @@ def complete_first_login(request: Request) -> Response:
         otp_service.verify_otp(
             phone=phone,
             request_type=OTPRequestType.FIRST_LOGIN,
-            otp_code=data["otp_code"],
+            otp_plain=data["otp_code"],
         )
     except (OTPExpiredError, OTPInvalidError, OTPMaxAttemptsExceededError, OTPNotFoundError) as exc:
         return _otp_error_response(exc)
@@ -504,7 +504,7 @@ def login_view(request: Request) -> Response:
             otp_service.verify_otp(
                 phone=phone,
                 request_type=OTPRequestType.LOGIN,
-                otp_code=otp_code,
+                otp_plain=otp_code,
             )
         except (OTPExpiredError, OTPInvalidError, OTPMaxAttemptsExceededError, OTPNotFoundError) as exc:
             return _otp_error_response(exc)
@@ -611,7 +611,7 @@ def confirm_password_reset(request: Request) -> Response:
         otp_request = otp_service.verify_otp(
             phone=phone,
             request_type=OTPRequestType.PASSWORD_RESET,
-            otp_code=data["otp_code"],
+            otp_plain=data["otp_code"],
         )
     except (OTPExpiredError, OTPInvalidError, OTPMaxAttemptsExceededError, OTPNotFoundError) as exc:
         return _otp_error_response(exc)
@@ -696,7 +696,7 @@ def confirm_pin_reset(request: Request) -> Response:
         otp_request = otp_service.verify_otp(
             phone=phone,
             request_type=OTPRequestType.PIN_RESET,
-            otp_code=data["otp_code"],
+            otp_plain=data["otp_code"],
         )
     except (OTPExpiredError, OTPInvalidError, OTPMaxAttemptsExceededError, OTPNotFoundError) as exc:
         return _otp_error_response(exc)
