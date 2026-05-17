@@ -68,7 +68,7 @@ apiClient.interceptors.response.use(
     const status = error.response?.status
     const requestConfig = error.config as PendingRequestConfig | undefined
 
-    const requestUrl = requestConfig.url ?? ''
+    const requestUrl = requestConfig?.url ?? ''
     const isAuthEndpoint = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/token')
     if (status !== 401 || !requestConfig || requestConfig._retry || isAuthEndpoint) {
       return Promise.reject(error)
