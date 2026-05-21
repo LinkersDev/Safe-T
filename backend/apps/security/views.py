@@ -623,7 +623,7 @@ def confirm_password_reset(request: Request) -> Response:
         user=user,
         reset_type=ResetType.PASSWORD,
         otp_request=otp_request,
-        ip_address=ip,
+        ip=ip,
         success=True,
     )
     return Response(
@@ -708,7 +708,7 @@ def confirm_pin_reset(request: Request) -> Response:
         user=user,
         reset_type=ResetType.PIN,
         otp_request=otp_request,
-        ip_address=ip,
+        ip=ip,
         success=True,
     )
     return Response(

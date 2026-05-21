@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Html5Qrcode } from 'html5-qrcode'
 import { useNavigate } from 'react-router-dom'
@@ -24,6 +24,7 @@ export function QrPaymentPage() {
   const resolveMutateRef = useRef<(raw: string) => void>(() => {})
   const scannerRef = useRef<Html5Qrcode | null>(null)
   const scannerStartedRef = useRef(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const issueQuery = useQuery({
     queryKey: ['p2p-receive-qr-issue'],
@@ -162,6 +163,27 @@ export function QrPaymentPage() {
     setScanNonce((n) => n + 1)
   }
 
+  const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    event.target.value = ''
+    setScanError(null)
+    try {
+      const helper = new Html5Qrcode('p2p-qr-file-scan-helper')
+      const decoded = await helper.scanFile(file, false)
+      try { helper.clear() } catch { /* ignore */ }
+      const trimmed = decoded.trim()
+      if (!trimmed.startsWith('safet:p2p:v1:')) {
+        setScanError('Not a valid SafeT peer QR code.')
+        return
+      }
+      decodeHandledRef.current = true
+      resolveMutateRef.current(trimmed)
+    } catch {
+      setScanError('Could not read a QR code from that image. Try a clearer photo.')
+    }
+  }, [])
+
   const scannerDomId = `p2p-qr-scanner-region-${scanNonce}`
 
   return (
@@ -229,12 +251,24 @@ export function QrPaymentPage() {
             id={scannerDomId}
             className="overflow-hidden rounded-xl border border-border bg-black [&_video]:mx-auto [&_video]:max-h-[min(320px,55vh)]"
           />
+          <div id="p2p-qr-file-scan-helper" style={{ display: 'none' }} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            style={{ display: 'none' }}
+            onChange={handleFileSelect}
+          />
           {resolveMutation.isPending ? (
             <p className="text-center text-sm text-text-tertiary">Confirming recipient…</p>
           ) : null}
           {scanError ? <p className="text-center text-sm text-brand-danger">{scanError}</p> : null}
           <Button type="button" variant="secondary" className="w-full" onClick={restartCamera}>
             Restart camera
+          </Button>
+          <Button type="button" variant="secondary" className="w-full" onClick={() => fileInputRef.current?.click()}>
+            Use image instead
           </Button>
         </Card>
       )}

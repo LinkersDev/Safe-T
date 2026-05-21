@@ -22,14 +22,20 @@ export function NotificationsPage() {
   const readOneMutation = useMutation({
     mutationFn: markNotificationRead,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['notifications'] })
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+        queryClient.invalidateQueries({ queryKey: ['notification-count'] }),
+      ])
     },
   })
 
   const readAllMutation = useMutation({
     mutationFn: markAllNotificationsRead,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['notifications'] })
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+        queryClient.invalidateQueries({ queryKey: ['notification-count'] }),
+      ])
     },
   })
 

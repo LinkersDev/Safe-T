@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { cn } from '../../../core/utils/cn'
 import { useAuthSession, endSession } from '../../../domains/security/hooks/useAuthSession'
+import { isStaffRole } from '../../../core/permissions/capabilities'
 import { getNotificationCount } from '../../../domains/support/services/support-service'
 import { ROUTE_PATHS } from '../../../app/routing/paths'
 import type { RoleCode } from '../../../core/state/auth-state'
@@ -59,7 +60,7 @@ export function TopBar({ title, onMenuClick }: TopBarProps) {
       <div className="flex items-center gap-3">
         {/* Notification bell */}
         <button
-          onClick={() => navigate(ROUTE_PATHS.notifications)}
+          onClick={() => navigate(isStaffRole(role) ? ROUTE_PATHS.staff : ROUTE_PATHS.notifications)}
           className="relative flex h-9 w-9 items-center justify-center rounded-lg text-text-secondary hover:bg-surface-secondary transition-colors"
           aria-label="Notifications"
         >
