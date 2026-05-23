@@ -11,14 +11,6 @@ import {
 import type { LoginResponse, MockAuthLoginResponse } from '../types'
 import type { RoleCode } from '../../../core/state/auth-state'
 
-function clearLegacyLocalStorageTokens() {
-  try {
-    window.localStorage.removeItem('safet.access.token')
-    window.localStorage.removeItem('safet.refresh.token')
-  } catch {
-    // ignore
-  }
-}
 
 export function useAuthSession() {
   return useSyncExternalStore(subscribeSessionState, getSessionState, getSessionState)
@@ -29,7 +21,6 @@ export async function startSession(response: LoginResponse): Promise<void> {
     accessToken: response.access,
     refreshToken: response.refresh,
   })
-  clearLegacyLocalStorageTokens()
 
   const user = {
     id: response.user.id,
@@ -56,7 +47,6 @@ export async function startMockSession(response: MockAuthLoginResponse): Promise
     accessToken: response.session.access_token,
     refreshToken: 'mock-refresh-token',
   })
-  clearLegacyLocalStorageTokens()
 
   const roleCode =
     response.user.role === 'admin'
