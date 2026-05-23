@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import { clearTokens, readAccessToken, saveTokens } from '../../../core/auth/token-service'
+import { saveTokensAsync, clearTokensAsync } from '../../../core/auth/token-service'
 import { decodeJwtPayload, isJwtExpired } from '../../../core/auth/jwt'
 import { getRolePermissions } from '../../../core/permissions/role-permissions'
 import {
@@ -24,8 +24,8 @@ export function useAuthSession() {
   return useSyncExternalStore(subscribeSessionState, getSessionState, getSessionState)
 }
 
-export function startSession(response: LoginResponse) {
-  saveTokens({
+export async function startSession(response: LoginResponse): Promise<void> {
+  await saveTokensAsync({
     accessToken: response.access,
     refreshToken: response.refresh,
   })
@@ -51,8 +51,8 @@ export function startSession(response: LoginResponse) {
   })
 }
 
-export function startMockSession(response: MockAuthLoginResponse) {
-  saveTokens({
+export async function startMockSession(response: MockAuthLoginResponse): Promise<void> {
+  await saveTokensAsync({
     accessToken: response.session.access_token,
     refreshToken: 'mock-refresh-token',
   })
@@ -79,13 +79,17 @@ export function startMockSession(response: MockAuthLoginResponse) {
   })
 }
 
-export function endSession() {
-  clearTokens()
+export async function endSession(): Promise<void> {
+  await clearTokensAsync()
   clearSessionState()
 }
 
 export function hasStoredSession() {
-  return Boolean(readAccessToken())
+  try {
+    return Boolean(window.localStorage.getItem('safet.access.token'))
+  } catch {
+    return false
+  }
 }
 
 export function ensureSessionHydratedFromToken() {
@@ -94,14 +98,19 @@ export function ensureSessionHydratedFromToken() {
     return
   }
 
-  const token = readAccessToken()
+  let token: string | null = null
+  try {
+    token = window.localStorage.getItem('safet.access.token')
+  } catch {
+    return
+  }
   if (!token) {
     return
   }
 
   const payload = decodeJwtPayload(token)
   if (!payload || isJwtExpired(payload)) {
-    clearTokens()
+    clearTokensAsync().catch(() => {})
     clearSessionState()
     return
   }
